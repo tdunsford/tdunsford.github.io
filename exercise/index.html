@@ -40,12 +40,12 @@
         .exercise-card {
             background: linear-gradient(135deg, #3498db, #8e44ad);
             color: white;
-            padding: 15px 10px;
-            border-radius: 10px;
+            padding: 5px 5px;
+            border-radius: 5px;
             text-align: center;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-height: 80px;
+            min-height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -56,6 +56,30 @@
             margin-bottom: 10px;
             color: #2c3e50;
             font-size: 1.1rem;
+        }
+        .exercise-inputs {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-label {
+            font-size: 0.8rem;
+            margin-bottom: 3px;
+            color: #ecf0f1;
+        }
+        .exercise-input {
+            width: 60px;
+            padding: 5px;
+            border-radius: 4px;
+            border: none;
+            text-align: center;
+            font-size: 0.9rem;
         }
         .refresh-btn {
             display: block;
@@ -102,6 +126,15 @@
                 min-height: 70px;
                 font-size: 0.9rem;
             }
+            .exercise-inputs {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .input-group {
+                flex-direction: row;
+                align-items: center;
+                gap: 5px;
+            }
         }
     </style>
 </head>
@@ -111,7 +144,7 @@
         <div class="date-display" id="current-date">Loading...</div>
         <div id="loading" class="loading">Loading exercises from Google Sheet...</div>
         <div id="exercises-container"></div>
-        <!-- <button class="refresh-btn" onclick="generateExercises()">Generate New Exercises</button> -->
+        <button class="refresh-btn" onclick="generateExercises()">Generate New Exercises</button>
     </div>
 
     <script>
@@ -144,6 +177,32 @@
             return array[index];
         }
 
+        // Get cookie value by name
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Set cookie with name, value, and days to expire
+        function setCookie(name, value, days) {
+            const expires = days ? `; expires=${new Date(Date.now() + days * 86400000).toUTCString()}` : '';
+            document.cookie = `${name}=${value}${expires}; path=/`;
+        }
+
+        // Get exercise data from cookie
+        function getExerciseData(exerciseName) {
+            const cookieName = `exercise_${exerciseName}`;
+            const data = getCookie(cookieName);
+            return data ? JSON.parse(data) : { reps: '', weight: '' };
+        }
+
+        // Save exercise data to cookie
+        function saveExerciseData(exerciseName, reps, weight) {
+            const cookieName = `exercise_${exerciseName}`;
+            setCookie(cookieName, JSON.stringify({ reps, weight }), 30); // Save for 30 days
+        }
+
         // Fetch data from Google Sheet
         async function fetchExercises() {
             try {
@@ -159,7 +218,7 @@
                 // Parse CSV data
                 const columns = [];
                 lines.forEach((line, index) => {
-                    // if (index === 0) return; // Skip header row
+                    if (index === 0) return; // Skip header row
                     
                     const cells = line.split(',');
                     cells.forEach((cell, cellIndex) => {
@@ -206,19 +265,64 @@
                     // Use first row as category name
                     const categoryName = column[0];
                     // Get random exercise from the rest of the column (excluding header)
-                    const exercise = getRandomExercise(column.slice(1), seed + columnIndex);
+                    const exerciseName = getRandomExercise(column.slice(1), seed + columnIndex);
+                    
+                    // Get saved data for this exercise
+                    const savedData = getExerciseData(exerciseName);
                     
                     const card = document.createElement('div');
                     card.className = 'exercise-card';
-                    card.textContent = exercise;
+                    card.textContent = exerciseName;
                     
                     const title = document.createElement('div');
                     title.className = 'category-title';
                     title.textContent = categoryName;
                     
+                    // Create input fields
+                    const inputsContainer = document.createElement('div');
+                    inputsContainer.className = 'exercise-inputs';
+                    
+                    const repsInput = document.createElement('div');
+                    repsInput.className = 'input-group';
+                    
+                    const repsLabel = document.createElement('span');
+                    repsLabel.className = 'input-label';
+                    repsLabel.textContent = 'Reps';
+                    
+                    const repsField = document.createElement('input');
+                    repsField.type = 'number';
+                    repsField.className = 'exercise-input';
+                    repsField.placeholder = '0';
+                    repsField.value = savedData.reps;
+                    repsField.onchange = () => saveExerciseData(exerciseName, repsField.value, weightField.value);
+                    
+                    repsInput.appendChild(repsLabel);
+                    repsInput.appendChild(repsField);
+                    
+                    const weightInput = document.createElement('div');
+                    weightInput.className = 'input-group';
+                    
+                    const weightLabel = document.createElement('span');
+                    weightLabel.className = 'input-label';
+                    weightLabel.textContent = 'Weight';
+                    
+                    const weightField = document.createElement('input');
+                    weightField.type = 'number';
+                    weightField.className = 'exercise-input';
+                    weightField.placeholder = '0';
+                    weightField.value = savedData.weight;
+                    weightField.onchange = () => saveExerciseData(exerciseName, repsField.value, weightField.value);
+                    
+                    weightInput.appendChild(weightLabel);
+                    weightInput.appendChild(weightField);
+                    
+                    inputsContainer.appendChild(repsInput);
+                    inputsContainer.appendChild(weightInput);
+                    
                     const wrapper = document.createElement('div');
                     wrapper.appendChild(title);
                     wrapper.appendChild(card);
+                    wrapper.appendChild(inputsContainer);
                     
                     container.appendChild(wrapper);
                 });
