@@ -1,160 +1,189 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <title>Weekly Schedule</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Weekly Schedule</h1>
-        <p class="subtitle">Next 8 Weeks</p>
-        <div class="table-container">
-            <table id="schedule">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Snacks</th>
-                        <th>Main</th>
-                        <th>Sides</th>
-                        <th>Dessert</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+    <head>
+        <title>Sunday Dinner</title>
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="apple-touch-icon" href="burger.png" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>Sunday Dinner Schedule</h1>
+            <p class="subtitle">Next 8 Weeks</p>
+            <div class="table-container">
+                <table id="schedule">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Snacks</th>
+                            <th>Main</th>
+                            <th>Sides</th>
+                            <th>Dessert</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
-    </div>
 
-    <script>
-        // Google Sheets CSV URL
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTRhVP3uepN0P8sj7Bfa2yZYV_dw8CAN69oZXQBUVpeiqgIp6zPFgcDi_eQcmANUN7Ikt9OnnHlL4tw/pub?gid=0&single=true&output=csv';
-        
-        // Function to get cookie value
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-        
-        // Function to set cookie
-        function setCookie(name, value, days) {
-            const expires = days ? `; expires=${new Date(Date.now() + days * 86400000).toUTCString()}` : '';
-            document.cookie = `${name}=${value}${expires}; path=/`;
-        }
-        
-        // Function to highlight cells with the same value
-        function highlightValue(value) {
-            // Remove previous highlights
-            document.querySelectorAll('#schedule td.highlighted').forEach(cell => {
-                cell.classList.remove('highlighted');
-            });
-            
-            // Highlight all cells with the same value
-            if (value) {
-                const cells = document.querySelectorAll('#schedule td');
-                cells.forEach(cell => {
-                    if (cell.textContent.trim() === value.trim()) {
-                        cell.classList.add('highlighted');
-                    }
-                });
+        <script>
+            // Google Sheets CSV URL
+            const csvUrl =
+                "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRhVP3uepN0P8sj7Bfa2yZYV_dw8CAN69oZXQBUVpeiqgIp6zPFgcDi_eQcmANUN7Ikt9OnnHlL4tw/pub?gid=0&single=true&output=csv";
+
+            // Function to get cookie value
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(";").shift();
             }
-        }
-        
-        // Function to handle cell click
-        function handleCellClick(event) {
-            const cell = event.target;
-            const value = cell.textContent.trim();
-            
-            if (value && value !== 'Date' && value !== 'Snacks' && value !== 'Main' && value !== 'Sides' && value !== 'Dessert' && value !== 'Notes') {
-                // Store the highlighted value in cookie
-                setCookie('highlightedValue', value, 30); // Save for 30 days
-                
-                // Highlight all instances of this value
-                highlightValue(value);
+
+            // Function to set cookie
+            function setCookie(name, value, days) {
+                const expires = days
+                    ? `; expires=${new Date(Date.now() + days * 86400000).toUTCString()}`
+                    : "";
+                document.cookie = `${name}=${value}${expires}; path=/`;
             }
-        }
-        
-        // Format date as dd-mmm
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const day = String(date.getDate()).padStart(2, '0');
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const month = monthNames[date.getMonth()];
-            return `${day}-${month}`;
-        }
-        
-        // Load and display data
-        fetch(csvUrl)
-            .then(response => response.text())
-            .then(data => {
-                const lines = data.trim().split('\n');
-                const rows = lines.slice(1).map(line => line.split(','));
-                
-                // Get today's date
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                
-                // Filter and sort future dates
-                const futureRows = rows
-                    .filter(row => {
-                        const date = new Date(row[0]);
-                        date.setHours(0, 0, 0, 0);
-                        return date >= today;
-                    })
-                    .sort((a, b) => new Date(a[0]) - new Date(b[0]));
-                
-                // Get next 8 weeks
-                const nextWeeks = futureRows.slice(0, 8);
-                
-                // Display in table
-                const tbody = document.querySelector('#schedule tbody');
-                nextWeeks.forEach(row => {
-                    const tr = document.createElement('tr');
-                    // Format date as dd-mmm
-                    const formattedDate = formatDate(row[0]);
-                    
-                    // Create cells for each column (including notes)
-                    const cells = [
-                        formattedDate,  // Date column
-                        row[1],         // Snacks
-                        row[2],         // Main
-                        row[3],         // Sides
-                        row[4],         // Dessert
-                        row[5]          // Notes (new column)
-                    ];
-                    
-                    cells.forEach((cellValue, index) => {
-                        if (index !== 5) { 
-                            const td = document.createElement('td');
-                            td.textContent = cellValue;
-                            td.addEventListener('click', handleCellClick);
-                            tr.appendChild(td);
+
+            // Function to highlight cells with the same value
+            function highlightValue(value) {
+                // Remove previous highlights
+                document
+                    .querySelectorAll("#schedule td.highlighted")
+                    .forEach((cell) => {
+                        cell.classList.remove("highlighted");
+                    });
+
+                // Highlight all cells with the same value
+                if (value) {
+                    const cells = document.querySelectorAll("#schedule td");
+                    cells.forEach((cell) => {
+                        if (cell.textContent.trim() === value.trim()) {
+                            cell.classList.add("highlighted");
                         }
                     });
-                    
-                    tbody.appendChild(tr);
-                    
-                    // Add notes row if notes exist
-                    if (row[5] && row[5].trim() !== '') {
-                        const notesTr = document.createElement('tr');
-                        notesTr.className = 'notes-row';
-                        const notesTd = document.createElement('td');
-                        notesTd.colSpan = 6; // Span across all columns
-                        notesTd.textContent = row[5];
-                        notesTd.className = 'notes-cell';
-                        notesTr.appendChild(notesTd);
-                        tbody.appendChild(notesTr);
-                    }
-                });
-                
-                // Check for saved highlight value
-                const savedValue = getCookie('highlightedValue');
-                if (savedValue) {
-                    highlightValue(savedValue);
                 }
-            })
-            .catch(error => console.error('Error loading CSV:', error));
-    </script>
-</body>
+            }
+
+            // Function to handle cell click
+            function handleCellClick(event) {
+                const cell = event.target;
+                const value = cell.textContent.trim();
+
+                if (
+                    value &&
+                    value !== "Date" &&
+                    value !== "Snacks" &&
+                    value !== "Main" &&
+                    value !== "Sides" &&
+                    value !== "Dessert" &&
+                    value !== "Notes"
+                ) {
+                    // Store the highlighted value in cookie
+                    setCookie("highlightedValue", value, 30); // Save for 30 days
+
+                    // Highlight all instances of this value
+                    highlightValue(value);
+                }
+            }
+
+            // Format date as dd-mmm
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const day = String(date.getDate()).padStart(2, "0");
+                const monthNames = [
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec",
+                ];
+                const month = monthNames[date.getMonth()];
+                return `${day}-${month}`;
+            }
+
+            // Load and display data
+            fetch(csvUrl)
+                .then((response) => response.text())
+                .then((data) => {
+                    const lines = data.trim().split("\n");
+                    const rows = lines.slice(1).map((line) => line.split(","));
+
+                    // Get today's date
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    // Filter and sort future dates
+                    const futureRows = rows
+                        .filter((row) => {
+                            const date = new Date(row[0]);
+                            date.setHours(0, 0, 0, 0);
+                            return date >= today;
+                        })
+                        .sort((a, b) => new Date(a[0]) - new Date(b[0]));
+
+                    // Get next 8 weeks
+                    const nextWeeks = futureRows.slice(0, 8);
+
+                    // Display in table
+                    const tbody = document.querySelector("#schedule tbody");
+                    nextWeeks.forEach((row) => {
+                        const tr = document.createElement("tr");
+                        // Format date as dd-mmm
+                        const formattedDate = formatDate(row[0]);
+
+                        // Create cells for each column (including notes)
+                        const cells = [
+                            formattedDate, // Date column
+                            row[1], // Snacks
+                            row[2], // Main
+                            row[3], // Sides
+                            row[4], // Dessert
+                            row[5], // Notes (new column)
+                        ];
+
+                        cells.forEach((cellValue, index) => {
+                            if (index !== 5) {
+                                const td = document.createElement("td");
+                                td.textContent = cellValue;
+                                td.addEventListener("click", handleCellClick);
+                                tr.appendChild(td);
+                            }
+                        });
+
+                        tbody.appendChild(tr);
+
+                        // Add notes row if notes exist
+                        if (row[5] && row[5].trim() !== "") {
+                            const notesTr = document.createElement("tr");
+                            notesTr.className = "notes-row";
+                            const notesTd = document.createElement("td");
+                            notesTd.colSpan = 6; // Span across all columns
+                            notesTd.textContent = row[5];
+                            notesTd.className = "notes-cell";
+                            notesTr.appendChild(notesTd);
+                            tbody.appendChild(notesTr);
+                        }
+                    });
+
+                    // Check for saved highlight value
+                    const savedValue = getCookie("highlightedValue");
+                    if (savedValue) {
+                        highlightValue(savedValue);
+                    }
+                })
+                .catch((error) => console.error("Error loading CSV:", error));
+        </script>
+    </body>
 </html>
