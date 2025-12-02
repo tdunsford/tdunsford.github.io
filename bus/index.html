@@ -84,8 +84,9 @@
             text-align: center;
         }
         .refresh-button {
-            margin-top: 20px;
-            padding: 10px 20px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding: 10px 10px;
             background-color: #0064b1;
             color: white;
             border: none;
@@ -103,16 +104,18 @@
         <h1>Bus Times</h1>
         
         <div class="tabs">
-            <div class="tab active" data-tab="northbound">Northbound</div>
-            <div class="tab" data-tab="southbound">Southbound</div>
+            <div class="tab active" data-tab="northbound">NB</div>
+            <div class="tab" data-tab="southbound">SB</div>
+            <div class="tab" data-tab="activeliving">AL</div>
         </div>
+        <button class="refresh-button" onclick="refreshAllTabs()">Refresh</button>
         
         <div id="northbound-tab" class="tab-content active">
             <div class="stop-info">
                 <h2>Northbound Southwest Transitway at Chevrier Station</h2>
                 <p>Stop Number: 61208</p>
             </div>
-            <div id="northbound-loading" class="loading">Loading northbound bus times...</div>
+            <div id="northbound-loading" class="loading">Loading bus times...</div>
             <div id="northbound-error" class="error" style="display: none;"></div>
             <div id="northbound-bus-times" class="bus-times"></div>
         </div>
@@ -122,15 +125,53 @@
                 <h2>Southbound Southwest Transitway at Chevrier Station</h2>
                 <p>Stop Number: 62109</p>
             </div>
-            <div id="southbound-loading" class="loading">Loading southbound bus times...</div>
+            <div id="southbound-loading" class="loading">Loading bus times...</div>
             <div id="southbound-error" class="error" style="display: none;"></div>
             <div id="southbound-bus-times" class="bus-times"></div>
         </div>
+
+        <div id="activeliving-tab" class="tab-content">
+            <div class="stop-info">
+                <h2>Westbound Dafoe at Agriculture</h2>
+                <p>Stop Number: 60105</p>
+            </div>
+            <div id="activeliving-loading" class="loading">Loading bus times...</div>
+            <div id="activeliving-error" class="error" style="display: none;"></div>
+            <div id="activeliving-bus-times" class="bus-times"></div>
+        </div>
+
         
         <button class="refresh-button" onclick="refreshAllTabs()">Refresh All Times</button>
     </div>
 
     <script>
+
+        function getDurationUntilTime(timeString) {
+            // Parse the time string (expected format: "2025-12-02T11:39:16")
+            const targetTime = new Date(timeString);
+            
+            // Get current time
+            const currentTime = new Date();
+            
+            // Calculate the difference in milliseconds
+            const timeDiff = targetTime - currentTime;
+            
+            // If time is in the past or very close to now (less than 1 minute), return "due"
+            if (timeDiff <= 60000) { // 60000 milliseconds = 1 minute
+                return "Due";
+            }
+            
+            // Calculate minutes difference
+            const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+            
+            // Return the duration
+            if (minutesDiff === 1) {
+                return "1 minute";
+            } else {
+                return `${minutesDiff} minutes`;
+            }
+        }        
+
         // Function to fetch and display bus times for a specific stop
         async function fetchBusTimes(stopNumber, tabId) {
             const loadingElement = document.getElementById(`${tabId}-loading`);
@@ -154,17 +195,31 @@
                 
                 const data = await response.json();
                 
-                // Extract next 3 bus times - FIXED: Using bracket notation for keys with dashes
-                const scheduledStops = data["stop-schedule"]["route-schedules"][0]["scheduled-stops"];
+                // Extract next 3 bus times - FIXED: Using bracket notation for keys with dashes\
+                const routes = data["stop-schedule"]["route-schedules"]
+
+                const scheduledStops = routes.filter(r => r.route.key=="BLUE")[0]["scheduled-stops"];
                 const nextArrivalTimes = scheduledStops
                     .filter(stop => stop.cancelled === "false")
                     .slice(0,5)
+                    .sort((a, b) => {
+                        // Handle cases where the field might be missing or null
+                        const timeA = a.times.departure.estimated;
+                        const timeB = b.times.departure.estimated;
+                        
+                        // If either time is missing, put them at the end
+                        if (timeA === undefined || timeA === null) return 1;
+                        if (timeB === undefined || timeB === null) return -1;
+                        
+                        return new Date(timeA) - new Date(timeB);
+                    })
                     .map(stop => {
-                        const date = new Date(stop.times.arrival.estimated);
+                        const date = new Date(stop.times.departure.estimated);
                         const hours = date.getHours();
                         const minutes = date.getMinutes().toString().padStart(2, '0');
                         // const ampm = hours >= 12 ? 'PM' : 'AM';
                         const formattedHours = hours % 12 || 12;
+                        const duein = getDurationUntilTime(stop.times.departure.estimated);
                         try {
                             busid = stop.bus.key
                         } catch(error) {
@@ -173,6 +228,7 @@
                         
                         return {
                             time: `${hours}:${minutes}  `,
+                            due: duein,
                             bus: busid,
                             tripKey: stop["trip-key"],
                             destination: stop.variant.name
@@ -183,9 +239,9 @@
                 loadingElement.style.display = 'none';
                 busTimesElement.innerHTML = nextArrivalTimes.map((time, index) => 
                     `<div class="time-item">
-                        <div style="font-size: 28px; margin: 5px 0;">${time.time}</div>
+                        <div style="font-size: 28px; margin: 5px 0;">${time.due}</div>
                         <div style="font-size: 18px; margin: 5px 0;">to ${time.destination}</div>
-                        <div>Bus: ${time.bus}</div>
+                        <div style="font-size: 16px;">Bus: ${time.bus} @ ${time.time}</div>
                     </div>`
                 ).join('');
                 
@@ -227,6 +283,7 @@
         function refreshAllTabs() {
             fetchBusTimes(61208, 'northbound');
             fetchBusTimes(61209, 'southbound');
+            fetchBusTimes(60105, 'activeliving');
         }
         
         // Set up tab switching with proper event handling
@@ -241,6 +298,7 @@
         window.addEventListener('load', function() {
             fetchBusTimes(61208, 'northbound');
             fetchBusTimes(61209, 'southbound');
+            fetchBusTimes(60105, 'activeliving');
         });
     </script>
 </body>
