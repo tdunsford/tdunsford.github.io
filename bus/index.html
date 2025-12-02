@@ -156,29 +156,35 @@
                 
                 // Extract next 3 bus times - FIXED: Using bracket notation for keys with dashes
                 const scheduledStops = data["stop-schedule"]["route-schedules"][0]["scheduled-stops"];
-                const nextThreeTimes = scheduledStops
+                const nextArrivalTimes = scheduledStops
                     .filter(stop => stop.cancelled === "false")
-                    .slice(0, 3)
+                    .slice(0,5)
                     .map(stop => {
                         const date = new Date(stop.times.arrival.estimated);
                         const hours = date.getHours();
                         const minutes = date.getMinutes().toString().padStart(2, '0');
-                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        // const ampm = hours >= 12 ? 'PM' : 'AM';
                         const formattedHours = hours % 12 || 12;
+                        try {
+                            busid = stop.bus.key
+                        } catch(error) {
+                            busid = "N/A"
+                        }
                         
                         return {
-                            time: `${formattedHours}:${minutes} ${ampm}`,
-                            bus: stop.bus.key,
-                            tripKey: stop["trip-key"]
+                            time: `${hours}:${minutes}  `,
+                            bus: busid,
+                            tripKey: stop["trip-key"],
+                            destination: stop.variant.name
                         };
                     });
                 
                 // Display the times
                 loadingElement.style.display = 'none';
-                busTimesElement.innerHTML = nextThreeTimes.map((time, index) => 
+                busTimesElement.innerHTML = nextArrivalTimes.map((time, index) => 
                     `<div class="time-item">
-                        <div>Next Bus ${index + 1}</div>
-                        <div style="font-size: 28px; margin: 10px 0;">${time.time}</div>
+                        <div style="font-size: 28px; margin: 5px 0;">${time.time}</div>
+                        <div style="font-size: 18px; margin: 5px 0;">to ${time.destination}</div>
                         <div>Bus: ${time.bus}</div>
                     </div>`
                 ).join('');
