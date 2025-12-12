@@ -157,6 +157,10 @@
     <div class="container">
         <h1>Daily Exercise Selector</h1>
         <div class="date-display" id="current-date">Loading...</div>
+        <div style="text-align:center; margin:10px 0;">
+            <!-- <span id="seed-display" style="font-size:0.95rem; color:#7f8c8d;">Seed value: 0</span> -->
+            <button class="refresh-btn" id="new-seed-btn" style="display:inline-block; width:auto; padding:8px 12px; margin-left:8px; font-size:0.9rem;" onclick="generateNewSeed()">Generate New Exercises</button>
+        </div>
         <div id="loading" class="loading">Loading exercises from Google Sheet...</div>
         <div id="exercises-container"></div>
         <!-- <button class="refresh-btn" onclick="generateExercises()">Generate New Exercises</button> -->
@@ -168,16 +172,44 @@
         const dateString = today.toISOString().split('T')[0];
         document.getElementById('current-date').textContent = `Exercises for ${dateString}`;
 
-        // Simple hash function to create consistent seed from date
+        // Persistent extra seed stored in localStorage. Default 0 keeps previous date-only behavior.
+        function getExtraSeed() {
+            const v = localStorage.getItem('extraSeed');
+            return v !== null ? parseInt(v, 10) : 0;
+        }
+
+        function setExtraSeed(val) {
+            localStorage.setItem('extraSeed', String(val));
+            const display = document.getElementById('seed-display');
+            if (display) display.textContent = `Seed value: ${val}`;
+        }
+
+        function generateNewSeed() {
+            const newVal = Math.floor(Math.random() * 1e9);
+            setExtraSeed(newVal);
+            generateExercises();
+        }
+
+        function resetSeed() {
+            setExtraSeed(0);
+            generateExercises();
+        }
+
+        // Combined hash function using date + extraSeed for deterministic but controllable seed
         function getSeed(dateString) {
+            const extra = getExtraSeed();
+            const combined = `${dateString}|${extra}`;
             let hash = 0;
-            for (let i = 0; i < dateString.length; i++) {
-                const char = dateString.charCodeAt(i);
+            for (let i = 0; i < combined.length; i++) {
+                const char = combined.charCodeAt(i);
                 hash = ((hash << 5) - hash) + char;
                 hash = hash & hash; // Convert to 32bit integer
             }
             return Math.abs(hash);
         }
+
+        // Initialize seed display on load
+        setTimeout(() => setExtraSeed(getExtraSeed()), 0);
 
         // Generate random number using seed
         function seededRandom(seed) {
