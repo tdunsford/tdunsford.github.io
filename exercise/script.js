@@ -58,24 +58,39 @@ function getRandomExercise(array, seed) {
     return array[index];
 }
 
+function toTitleCase(value) {
+    return String(value || '')
+        .replace(/\b([A-Za-z])/g, (match) => match.toUpperCase());
+}
+
 // Get cookie value by name
 function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    const encodedName = `${encodeURIComponent(name)}=`;
+    const cookies = document.cookie ? document.cookie.split('; ') : [];
+    for (const cookie of cookies) {
+        if (cookie.startsWith(encodedName)) {
+            return decodeURIComponent(cookie.slice(encodedName.length));
+        }
+    }
+    return null;
 }
 
 // Set cookie with name, value, and days to expire
 function setCookie(name, value, days) {
     const expires = days ? `; expires=${new Date(Date.now() + days * 86400000).toUTCString()}` : '';
-    document.cookie = `${name}=${value}${expires}; path=/`;
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}${expires}; path=/; SameSite=Lax`;
 }
 
 // Get exercise data from cookie
 function getExerciseData(exerciseName) {
     const cookieName = `exercise_${exerciseName}`;
     const data = getCookie(cookieName);
-    return data ? JSON.parse(data) : { reps: '', weight: '' };
+    if (!data) return { reps: '', weight: '' };
+    try {
+        return JSON.parse(data);
+    } catch {
+        return { reps: '', weight: '' };
+    }
 }
 
 // Save exercise data to cookie
@@ -165,12 +180,15 @@ async function generateExercises() {
 
         exercises.forEach((column, columnIndex) => {
             const categoryName = column[0];
+            const options = column.slice(1).filter(Boolean);
+
+            if (options.length === 0) return;
 
             const overrideKey = `override_${dateString}_${getExtraSeed()}_${columnIndex}`;
             const override = localStorage.getItem(overrideKey);
 
             // Determine initial exercise (override if present)
-            let exerciseName = override || getRandomExercise(column.slice(1), seed + columnIndex);
+            let exerciseName = override || getRandomExercise(options, seed + columnIndex);
 
             const savedData = getExerciseData(exerciseName);
 
@@ -180,54 +198,63 @@ async function generateExercises() {
             card.dataset.categoryName = categoryName;
             card.dataset.columnIndex = columnIndex;
 
-            const title = document.createElement('div');
-            title.className = 'category-title';
-            title.textContent = categoryName;
-            container.appendChild(title);
-
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            const nameRow = document.createElement('div');
+            nameRow.className = 'exercise-name-row';
             const exerciseNameElement = document.createElement('div');
             exerciseNameElement.className = 'exercise-name';
-            exerciseNameElement.textContent = exerciseName;
+            exerciseNameElement.textContent = toTitleCase(exerciseName);
+            const changeBtn = document.createElement('button');
+            changeBtn.className = 'change-icon-btn';
+            changeBtn.type = 'button';
+            changeBtn.textContent = '↻';
+            changeBtn.setAttribute('aria-label', 'Change exercise');
+            changeBtn.title = 'Change exercise';
+            const categoryBadge = document.createElement('span');
+            categoryBadge.className = 'category-badge';
+            categoryBadge.textContent = String(categoryName || '').toUpperCase();
+            nameRow.appendChild(exerciseNameElement);
+            nameRow.appendChild(changeBtn);
+            header.appendChild(nameRow);
+            header.appendChild(categoryBadge);
 
-            // Create details section
-            const detailsContainer = document.createElement('div');
-            detailsContainer.className = 'exercise-details';
+            const meta = document.createElement('div');
+            meta.className = 'card-meta';
 
-            const repsRow = document.createElement('div');
-            repsRow.className = 'detail-row';
+            const repsChip = document.createElement('div');
+            repsChip.className = 'metric-chip';
             const repsLabel = document.createElement('span');
-            repsLabel.className = 'detail-label';
-            repsLabel.textContent = 'Reps:';
+            repsLabel.className = 'metric-label';
+            repsLabel.textContent = 'Reps';
             const repsSpan = document.createElement('span');
             repsSpan.className = 'editable-value';
-            repsSpan.id = `reps-${exerciseName}`;
             repsSpan.dataset.field = 'reps';
             repsSpan.textContent = savedData.reps || '--';
-            repsRow.appendChild(repsLabel);
-            repsRow.appendChild(repsSpan);
+            repsChip.appendChild(repsLabel);
+            repsChip.appendChild(repsSpan);
 
-            const weightRow = document.createElement('div');
-            weightRow.className = 'detail-row';
+            const weightChip = document.createElement('div');
+            weightChip.className = 'metric-chip';
             const weightLabel = document.createElement('span');
-            weightLabel.className = 'detail-label';
-            weightLabel.textContent = 'Weight:';
+            weightLabel.className = 'metric-label';
+            weightLabel.textContent = 'Weight';
             const weightSpan = document.createElement('span');
             weightSpan.className = 'editable-value';
-            weightSpan.id = `weight-${exerciseName}`;
             weightSpan.dataset.field = 'weight';
             weightSpan.textContent = savedData.weight || '--';
-            weightRow.appendChild(weightLabel);
-            weightRow.appendChild(weightSpan);
+            weightChip.appendChild(weightLabel);
+            weightChip.appendChild(weightSpan);
 
-            detailsContainer.appendChild(repsRow);
-            detailsContainer.appendChild(weightRow);
+            meta.appendChild(repsChip);
+            meta.appendChild(weightChip);
 
             // Add completion checkbox
             const checkboxContainer = document.createElement('div');
             checkboxContainer.className = 'completion-checkbox';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.id = `completed-${exerciseName}`;
+            checkbox.id = `completed-${columnIndex}`;
             checkbox.checked = getCompletedStatus(exerciseName);
             checkbox.addEventListener('change', () => {
                 setCompletedStatus(card.dataset.exerciseName, checkbox.checked);
@@ -238,54 +265,41 @@ async function generateExercises() {
             checkboxContainer.appendChild(checkbox);
             checkboxContainer.appendChild(label);
 
-            // Change button (pick a different exercise from this column only)
-            const changeBtn = document.createElement('button');
-            changeBtn.className = 'change-btn';
-            changeBtn.type = 'button';
-            changeBtn.textContent = 'Change';
+            // Change exercise from header icon (pick a different exercise from this column only)
             changeBtn.addEventListener('click', () => {
-                const options = column.slice(1).filter(e => e !== card.dataset.exerciseName);
-                if (options.length === 0) return;
-                const newExercise = options[Math.floor(Math.random() * options.length)];
+                const remainingOptions = options.filter(e => e !== card.dataset.exerciseName);
+                if (remainingOptions.length === 0) return;
+                const newExercise = remainingOptions[Math.floor(Math.random() * remainingOptions.length)];
                 // persist override for this column/date/extra seed
                 localStorage.setItem(overrideKey, newExercise);
 
                 // update card dataset and displayed values
                 card.dataset.exerciseName = newExercise;
-                exerciseNameElement.textContent = newExercise;
+                exerciseNameElement.textContent = toTitleCase(newExercise);
 
                 const newSaved = getExerciseData(newExercise);
-                repsSpan.id = `reps-${newExercise}`;
                 repsSpan.textContent = newSaved.reps || '--';
-                weightSpan.id = `weight-${newExercise}`;
                 weightSpan.textContent = newSaved.weight || '--';
 
                 // update checkbox id and state
-                checkbox.id = `completed-${newExercise}`;
-                label.htmlFor = checkbox.id;
                 checkbox.checked = getCompletedStatus(newExercise);
             });
 
             // Attach edit handlers that reference card.dataset.exerciseName at click time
-            repsSpan.addEventListener('click', () => editValue(card.dataset.exerciseName, 'reps'));
-            weightSpan.addEventListener('click', () => editValue(card.dataset.exerciseName, 'weight'));
+            repsSpan.addEventListener('click', () => editValue(card.dataset.exerciseName, 'reps', repsSpan));
+            weightSpan.addEventListener('click', () => editValue(card.dataset.exerciseName, 'weight', weightSpan));
 
-            // Create footer to hold details and checkbox side by side
-            const footer = document.createElement('div');
-            footer.className = 'exercise-footer';
-            footer.appendChild(detailsContainer);
+            const actions = document.createElement('div');
+            actions.className = 'card-actions';
+            actions.appendChild(checkboxContainer);
 
-            // put checkbox and change button together
-            const controls = document.createElement('div');
-            controls.style.display = 'flex';
-            controls.style.alignItems = 'center';
-            controls.appendChild(checkboxContainer);
-            controls.appendChild(changeBtn);
+            const body = document.createElement('div');
+            body.className = 'card-body';
+            body.appendChild(meta);
+            body.appendChild(actions);
 
-            footer.appendChild(controls);
-
-            card.appendChild(exerciseNameElement);
-            card.appendChild(footer);
+            card.appendChild(header);
+            card.appendChild(body);
 
             container.appendChild(card);
         });
@@ -296,15 +310,56 @@ async function generateExercises() {
 }
 
 // Function to handle editing values
-function editValue(exerciseName, field) {
-    const currentValue = getExerciseData(exerciseName)[field];
-    const newValue = prompt(`Enter ${field}:`, currentValue);
-    
-    if (newValue !== null) {
-        updateExerciseData(exerciseName, field, newValue);
-        // Update the display
-        document.getElementById(`${field}-${exerciseName}`).textContent = newValue || '--';
-    }
+function editValue(exerciseName, field, targetElement) {
+    if (targetElement.dataset.editing === 'true') return;
+    targetElement.dataset.editing = 'true';
+
+    const currentValue = getExerciseData(exerciseName)[field] || '';
+    const currentDisplay = targetElement.textContent;
+
+    const input = document.createElement('input');
+    input.className = 'inline-number-input';
+    input.type = 'number';
+    input.inputMode = field === 'reps' ? 'numeric' : 'decimal';
+    input.step = field === 'reps' ? '1' : 'any';
+    input.min = '0';
+    input.placeholder = field === 'reps' ? '0' : '0.0';
+    input.value = currentValue;
+    input.setAttribute('aria-label', `Edit ${field}`);
+
+    let finalized = false;
+    const finish = (save) => {
+        if (finalized) return;
+        finalized = true;
+
+        if (save) {
+            const rawValue = input.value.trim();
+            const isNumeric = rawValue === '' || !Number.isNaN(Number(rawValue));
+            const newValue = isNumeric ? rawValue : currentValue;
+            updateExerciseData(exerciseName, field, newValue);
+            targetElement.textContent = newValue || '--';
+        } else {
+            targetElement.textContent = currentDisplay;
+        }
+
+        targetElement.dataset.editing = 'false';
+        input.replaceWith(targetElement);
+    };
+
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            finish(true);
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            finish(false);
+        }
+    });
+    input.addEventListener('blur', () => finish(true));
+
+    targetElement.replaceWith(input);
+    input.focus();
+    input.select();
 }
 
 // Generate exercises on page load
