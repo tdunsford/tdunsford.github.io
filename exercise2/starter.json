@@ -1,0 +1,392 @@
+{
+  "version": 1,
+  "library": {
+    "version": 1,
+    "categories": [
+      {
+        "id": "cat_legs_push",
+        "name": "Legs Push",
+        "exercises": [
+          {
+            "id": "ex_legs_push_barbell_squat",
+            "name": "Barbell squat"
+          },
+          {
+            "id": "ex_legs_push_goblet_squat",
+            "name": "goblet squat"
+          },
+          {
+            "id": "ex_legs_push_curtsy_squat",
+            "name": "curtsy squat"
+          },
+          {
+            "id": "ex_legs_push_leg_press_machine",
+            "name": "leg press machine"
+          },
+          {
+            "id": "ex_legs_push_hack_squat_machine",
+            "name": "hack squat machine"
+          },
+          {
+            "id": "ex_legs_push_quad_ext_machine",
+            "name": "quad ext machine"
+          },
+          {
+            "id": "ex_legs_push_sumo_squat",
+            "name": "Sumo squat"
+          },
+          {
+            "id": "ex_legs_push_calf_raise",
+            "name": "Calf raise"
+          },
+          {
+            "id": "ex_legs_push_split_squat",
+            "name": "Split squat"
+          },
+          {
+            "id": "ex_legs_push_step_up",
+            "name": "Step up"
+          },
+          {
+            "id": "ex_legs_push_oh_squat",
+            "name": "OH squat"
+          },
+          {
+            "id": "ex_legs_push_smith_machine_squat",
+            "name": "Smith machine squat"
+          }
+        ]
+      },
+      {
+        "id": "cat_legs_pull",
+        "name": "Legs Pull",
+        "exercises": [
+          {
+            "id": "ex_legs_pull_barbell_rdl",
+            "name": "Barbell RDL"
+          },
+          {
+            "id": "ex_legs_pull_trap_bar_dl",
+            "name": "Trap bar DL"
+          },
+          {
+            "id": "ex_legs_pull_g2oh",
+            "name": "G2OH"
+          },
+          {
+            "id": "ex_legs_pull_split_squat",
+            "name": "Split squat"
+          },
+          {
+            "id": "ex_legs_pull_single_leg_dl",
+            "name": "single leg Dl"
+          },
+          {
+            "id": "ex_legs_pull_hamstring_curl",
+            "name": "hamstring curl"
+          },
+          {
+            "id": "ex_legs_pull_sumo_dl",
+            "name": "Sumo DL"
+          },
+          {
+            "id": "ex_legs_pull_swing",
+            "name": "Swing"
+          },
+          {
+            "id": "ex_legs_pull_straight_leg_dl",
+            "name": "Straight leg DL"
+          },
+          {
+            "id": "ex_legs_pull_forward_lunge",
+            "name": "Forward lunge"
+          },
+          {
+            "id": "ex_legs_pull_rear_lunge",
+            "name": "Rear lunge"
+          }
+        ]
+      },
+      {
+        "id": "cat_shoulder",
+        "name": "Shoulder",
+        "exercises": [
+          {
+            "id": "ex_shoulder_barbell_shoulder_press",
+            "name": "Barbell shoulder press"
+          },
+          {
+            "id": "ex_shoulder_machine_shoulder_press",
+            "name": "machine shoulder press"
+          },
+          {
+            "id": "ex_shoulder_dumbbell_shoulder_press",
+            "name": "Dumbbell shoulder press"
+          },
+          {
+            "id": "ex_shoulder_kneeling_shoulder_press",
+            "name": "kneeling shoulder press"
+          },
+          {
+            "id": "ex_shoulder_sitting_shoulder_press",
+            "name": "sitting shoulder press"
+          },
+          {
+            "id": "ex_shoulder_front_lat_raise",
+            "name": "front/lat raise"
+          },
+          {
+            "id": "ex_shoulder_arnold_press",
+            "name": "Arnold press"
+          },
+          {
+            "id": "ex_shoulder_rear_delt_raise",
+            "name": "rear delt raise"
+          },
+          {
+            "id": "ex_shoulder_w_raise_rotat",
+            "name": "W raise rotat"
+          },
+          {
+            "id": "ex_shoulder_upright_row",
+            "name": "Upright row"
+          },
+          {
+            "id": "ex_shoulder_seated_barbell_press",
+            "name": "Seated barbell press"
+          },
+          {
+            "id": "ex_shoulder_high_pull",
+            "name": "High pull"
+          },
+          {
+            "id": "ex_shoulder_felt_raise_machine",
+            "name": "Felt raise machine"
+          },
+          {
+            "id": "ex_shoulder_diverging_shoulder_press_machine",
+            "name": "Diverging shoulder press machine"
+          }
+        ]
+      },
+      {
+        "id": "cat_lats",
+        "name": "Lats",
+        "exercises": [
+          {
+            "id": "ex_lats_pulldown",
+            "name": "Pulldown"
+          },
+          {
+            "id": "ex_lats_assisted_pullup",
+            "name": "assisted pullup"
+          },
+          {
+            "id": "ex_lats_cable_wide_lat_pulldown",
+            "name": "cable wide lat pulldown"
+          },
+          {
+            "id": "ex_lats_assisted_chinup",
+            "name": "assisted chinup"
+          },
+          {
+            "id": "ex_lats_diverging_lat_pulldown_machine",
+            "name": "diverging lat pulldown machine"
+          },
+          {
+            "id": "ex_lats_cable_narrow_lat_pulldown",
+            "name": "cable narrow lat pulldown"
+          },
+          {
+            "id": "ex_lats_chop",
+            "name": "Chop"
+          },
+          {
+            "id": "ex_lats_halo",
+            "name": "Halo"
+          },
+          {
+            "id": "ex_lats_cable_chop",
+            "name": "Cable chop"
+          },
+          {
+            "id": "ex_lats_cable_lat_press_back",
+            "name": "Cable lat press back"
+          }
+        ]
+      },
+      {
+        "id": "cat_chest",
+        "name": "Chest",
+        "exercises": [
+          {
+            "id": "ex_chest_barbell_bench",
+            "name": "Barbell bench"
+          },
+          {
+            "id": "ex_chest_dumbbell_bench",
+            "name": "dumbbell bench"
+          },
+          {
+            "id": "ex_chest_chest_press_macnine",
+            "name": "chest press macnine"
+          },
+          {
+            "id": "ex_chest_pec_fly",
+            "name": "pec fly"
+          },
+          {
+            "id": "ex_chest_pushup",
+            "name": "Pushup"
+          },
+          {
+            "id": "ex_chest_incline_bench",
+            "name": "Incline bench"
+          },
+          {
+            "id": "ex_chest_incline_fly",
+            "name": "Incline fly"
+          },
+          {
+            "id": "ex_chest_burpee",
+            "name": "Burpee"
+          },
+          {
+            "id": "ex_chest_converging_cable_fly",
+            "name": "Converging cable fly"
+          }
+        ]
+      },
+      {
+        "id": "cat_back",
+        "name": "Back",
+        "exercises": [
+          {
+            "id": "ex_back_barbell_row",
+            "name": "Barbell row"
+          },
+          {
+            "id": "ex_back_one_arm_dumbbell_row",
+            "name": "one arm dumbbell row"
+          },
+          {
+            "id": "ex_back_rear_fly",
+            "name": "rear fly"
+          },
+          {
+            "id": "ex_back_cable_row",
+            "name": "Cable row"
+          },
+          {
+            "id": "ex_back_seated_cable_row",
+            "name": "seated cable row"
+          },
+          {
+            "id": "ex_back_back_raise",
+            "name": "Back raise"
+          },
+          {
+            "id": "ex_back_man_maker",
+            "name": "Man maker"
+          },
+          {
+            "id": "ex_back_bor",
+            "name": "BOR"
+          },
+          {
+            "id": "ex_back_good_morning",
+            "name": "Good morning"
+          },
+          {
+            "id": "ex_back_cable_rear_fly",
+            "name": "Cable rear fly"
+          },
+          {
+            "id": "ex_back_diverging_low_row",
+            "name": "Diverging low row"
+          },
+          {
+            "id": "ex_back_seated_row_machine",
+            "name": "Seated row machine"
+          },
+          {
+            "id": "ex_back_pec_fly_machine",
+            "name": "Pec fly machine"
+          }
+        ]
+      },
+      {
+        "id": "cat_core_a",
+        "name": "Core A",
+        "exercises": [
+          {
+            "id": "ex_core_a_core_twist_machine",
+            "name": "core twist machine"
+          },
+          {
+            "id": "ex_core_a_russian_twist",
+            "name": "russian twist"
+          },
+          {
+            "id": "ex_core_a_bicycles",
+            "name": "bicycles"
+          },
+          {
+            "id": "ex_core_a_windshield_wipers",
+            "name": "Windshield wipers"
+          },
+          {
+            "id": "ex_core_a_oh_march",
+            "name": "OH march"
+          },
+          {
+            "id": "ex_core_a_rev_crunch",
+            "name": "Rev crunch"
+          },
+          {
+            "id": "ex_core_a_plank_pulldown",
+            "name": "Plank pulldown"
+          }
+        ]
+      },
+      {
+        "id": "cat_core_b",
+        "name": "Core B",
+        "exercises": [
+          {
+            "id": "ex_core_b_suitcase",
+            "name": "suitcase"
+          },
+          {
+            "id": "ex_core_b_incline_crunch",
+            "name": "incline crunch"
+          },
+          {
+            "id": "ex_core_b_leg_raise",
+            "name": "leg raise"
+          },
+          {
+            "id": "ex_core_b_leg_pull_ups",
+            "name": "leg pull ups"
+          },
+          {
+            "id": "ex_core_b_plank",
+            "name": "Plank"
+          },
+          {
+            "id": "ex_core_b_skullcrush",
+            "name": "Skullcrush"
+          },
+          {
+            "id": "ex_core_b_ab_roller",
+            "name": "Ab roller"
+          }
+        ]
+      }
+    ]
+  },
+  "history": {
+    "version": 1,
+    "entries": []
+  }
+}

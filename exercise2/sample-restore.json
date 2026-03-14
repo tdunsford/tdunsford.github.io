@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "library": {
+    "version": 1,
+    "categories": [
+      {
+        "id": "cat_upper",
+        "name": "Upper Body",
+        "exercises": [
+          { "id": "ex_pushups", "name": "Push-ups" },
+          { "id": "ex_bench", "name": "Bench Press" },
+          { "id": "ex_rows", "name": "Bent-over Rows" }
+        ]
+      },
+      {
+        "id": "cat_lower",
+        "name": "Lower Body",
+        "exercises": [
+          { "id": "ex_squats", "name": "Squats" },
+          { "id": "ex_lunges", "name": "Lunges" },
+          { "id": "ex_rdl", "name": "Romanian Deadlift" }
+        ]
+      },
+      {
+        "id": "cat_core",
+        "name": "Core",
+        "exercises": [
+          { "id": "ex_plank", "name": "Plank" },
+          { "id": "ex_crunches", "name": "Crunches" },
+          { "id": "ex_legraises", "name": "Leg Raises" }
+        ]
+      }
+    ]
+  },
+  "history": {
+    "version": 1,
+    "entries": [
+      {
+        "id": "hist_001",
+        "date": "2026-03-08",
+        "completedAt": "2026-03-08T18:10:00.000Z",
+        "categoryId": "cat_upper",
+        "categoryName": "Upper Body",
+        "exerciseId": "ex_pushups",
+        "exerciseName": "Push-ups",
+        "reps": "20",
+        "weight": "0",
+        "seed": 18273
+      },
+      {
+        "id": "hist_002",
+        "date": "2026-03-08",
+        "completedAt": "2026-03-08T18:22:00.000Z",
+        "categoryId": "cat_core",
+        "categoryName": "Core",
+        "exerciseId": "ex_plank",
+        "exerciseName": "Plank",
+        "reps": "60",
+        "weight": "0",
+        "seed": 18273
+      },
+      {
+        "id": "hist_003",
+        "date": "2026-03-10",
+        "completedAt": "2026-03-10T17:58:00.000Z",
+        "categoryId": "cat_lower",
+        "categoryName": "Lower Body",
+        "exerciseId": "ex_squats",
+        "exerciseName": "Squats",
+        "reps": "10",
+        "weight": "135",
+        "seed": 47522
+      },
+      {
+        "id": "hist_004",
+        "date": "2026-03-10",
+        "completedAt": "2026-03-10T18:17:00.000Z",
+        "categoryId": "cat_upper",
+        "categoryName": "Upper Body",
+        "exerciseId": "ex_bench",
+        "exerciseName": "Bench Press",
+        "reps": "8",
+        "weight": "115",
+        "seed": 47522
+      },
+      {
+        "id": "hist_005",
+        "date": "2026-03-12",
+        "completedAt": "2026-03-12T18:05:00.000Z",
+        "categoryId": "cat_core",
+        "categoryName": "Core",
+        "exerciseId": "ex_legraises",
+        "exerciseName": "Leg Raises",
+        "reps": "15",
+        "weight": "0",
+        "seed": 99104
+      },
+      {
+        "id": "hist_006",
+        "date": "2026-03-13",
+        "completedAt": "2026-03-13T18:01:00.000Z",
+        "categoryId": "cat_lower",
+        "categoryName": "Lower Body",
+        "exerciseId": "ex_rdl",
+        "exerciseName": "Romanian Deadlift",
+        "reps": "8",
+        "weight": "155",
+        "seed": 127700
+      },
+      {
+        "id": "hist_007",
+        "date": "2026-03-14",
+        "completedAt": "2026-03-14T15:40:00.000Z",
+        "categoryId": "cat_upper",
+        "categoryName": "Upper Body",
+        "exerciseId": "ex_rows",
+        "exerciseName": "Bent-over Rows",
+        "reps": "10",
+        "weight": "95",
+        "seed": 222222
+      },
+      {
+        "id": "hist_008",
+        "date": "2026-03-14",
+        "completedAt": "2026-03-14T15:53:00.000Z",
+        "categoryId": "cat_core",
+        "categoryName": "Core",
+        "exerciseId": "ex_crunches",
+        "exerciseName": "Crunches",
+        "reps": "25",
+        "weight": "0",
+        "seed": 222222
+      }
+    ]
+  }
+}

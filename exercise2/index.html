@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Exercise Selector</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Daily Exercise Selector</h1>
+        <div class="tab-content">
+            <section id="tab-exercise" class="tab-panel is-active" data-tabpanel="exercise" aria-labelledby="tab-btn-exercise">
+                <div class="date-display" id="current-date">Loading...</div>
+
+                <div id="loading" class="loading">Loading exercises...</div>
+                <div id="exercises-container"></div>
+                <div class="page-actions">
+                    <button class="refresh-btn" id="new-seed-btn" type="button">Generate New Exercises</button>
+                </div>
+            </section>
+
+            <section id="tab-config" class="tab-panel" data-tabpanel="config" aria-labelledby="tab-btn-config">
+                <section class="library-panel" aria-labelledby="library-heading">
+                    <h2 id="library-heading">Exercise Library</h2>
+
+                    <div class="control-row">
+                        <input id="category-name-input" type="text" maxlength="60" placeholder="New category name" aria-label="New category name">
+                        <button id="add-category-btn" type="button">Add Category</button>
+                    </div>
+
+                    <div class="control-row">
+                        <select id="category-select" aria-label="Select category"></select>
+                        <input id="exercise-name-input" type="text" maxlength="80" placeholder="New exercise name" aria-label="New exercise name">
+                        <button id="add-exercise-btn" type="button">Add Exercise</button>
+                    </div>
+
+                    <div class="backup-row">
+                        <button id="export-library-btn" type="button">Export JSON</button>
+                        <label class="import-label" for="import-library-input">Import JSON</label>
+                        <input id="import-library-input" type="file" accept="application/json,.json">
+                    </div>
+
+                    <div id="library-status" class="status-message" aria-live="polite"></div>
+                    <div id="library-list" class="library-list"></div>
+                </section>
+            </section>
+
+            <section id="tab-history" class="tab-panel" data-tabpanel="history" aria-labelledby="tab-btn-history">
+                <section class="history-panel" aria-labelledby="history-heading">
+                    <div class="history-header">
+                        <h2 id="history-heading">History</h2>
+                        <div class="history-nav">
+                            <button id="history-prev-month-btn" type="button" aria-label="Previous month">Prev</button>
+                            <span id="history-month-label">Month</span>
+                            <button id="history-next-month-btn" type="button" aria-label="Next month">Next</button>
+                        </div>
+                    </div>
+                    <div id="history-calendar" class="history-calendar"></div>
+                    <div class="history-day">
+                        <h3 id="history-day-heading">Select a day</h3>
+                        <div id="history-day-list" class="history-day-list"></div>
+                    </div>
+                </section>
+            </section>
+        </div>
+
+        <nav class="bottom-tab-bar" aria-label="Primary">
+            <button id="tab-btn-exercise" class="tab-btn is-active" type="button" data-tab="exercise">Exercise</button>
+            <button id="tab-btn-config" class="tab-btn" type="button" data-tab="config">Config</button>
+            <button id="tab-btn-history" class="tab-btn" type="button" data-tab="history">History</button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
