@@ -15,6 +15,7 @@
     --accent: #0f766e;
     --accent-soft: #d5efed;
     --border: #d6e1e8;
+    --bottom-gesture-gap: 12px;
 }
 
 * {
@@ -36,7 +37,7 @@ body {
     padding: var(--s-4);
     box-shadow: 0 8px 24px rgba(18, 40, 58, 0.08);
     border: 1px solid var(--border);
-    padding-bottom: calc(var(--s-3) + 64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--s-3) + 64px + env(safe-area-inset-bottom, 0px) + var(--bottom-gesture-gap));
 }
 
 h1 {
@@ -68,12 +69,12 @@ h1 {
 
 .bottom-tab-bar {
     position: fixed;
-    bottom: 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-gesture-gap));
     left: 50%;
     transform: translateX(-50%);
     width: min(100%, 540px);
     padding: var(--s-1);
-    padding-bottom: calc(var(--s-1) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: var(--s-1);
     background: #f4f8fb;
     box-shadow: 0 -6px 18px rgba(18, 40, 58, 0.08);
     border: 1px solid var(--border);
@@ -649,7 +650,7 @@ h1 {
 
     .container {
         padding: var(--s-3);
-        padding-bottom: calc(var(--s-3) + 58px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(var(--s-3) + 58px + env(safe-area-inset-bottom, 0px) + var(--bottom-gesture-gap));
     }
 
     h1 {
