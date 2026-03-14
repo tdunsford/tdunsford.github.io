@@ -3,6 +3,7 @@ const LIBRARY_VERSION = 1;
 const HISTORY_STORAGE_KEY = 'exerciseHistory_v1';
 const HISTORY_VERSION = 1;
 const EXTRA_SEED_STORAGE_KEY = 'extraSeed';
+const STARTER_LIBRARY_PATH = './starter.json';
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -141,6 +142,23 @@ function validateLibrary(raw) {
     }
 
     return { ok: true, library };
+}
+
+function getExerciseCount(library) {
+    if (!library || !Array.isArray(library.categories)) return 0;
+
+    return library.categories.reduce((total, category) => {
+        const exercises = Array.isArray(category && category.exercises) ? category.exercises.length : 0;
+        return total + exercises;
+    }, 0);
+}
+
+function extractLibraryFromPayload(payload) {
+    if (payload && typeof payload === 'object' && !Array.isArray(payload) && payload.library) {
+        return validateLibrary(payload.library);
+    }
+
+    return validateLibrary(payload);
 }
 
 function normalizeHistory(raw) {
@@ -371,6 +389,28 @@ function setStatus(message, isError) {
             el.classList.remove('has-error');
             state.statusTimer = null;
         }, 2500);
+    }
+}
+
+async function loadStarterLibraryIfEmpty() {
+    if (getExerciseCount(state.library) > 0) return false;
+
+    try {
+        const response = await fetch(STARTER_LIBRARY_PATH, { cache: 'no-store' });
+        if (!response.ok) return false;
+
+        const payload = await response.json();
+        const validation = extractLibraryFromPayload(payload);
+        if (!validation.ok) return false;
+        if (getExerciseCount(validation.library) === 0) return false;
+
+        state.library = validation.library;
+        clearAllOverrideKeys();
+        saveLibrary();
+        setStatus('Starter library loaded.', false);
+        return true;
+    } catch {
+        return false;
     }
 }
 
@@ -1020,7 +1060,7 @@ function switchTab(tabName) {
     });
 }
 
-function init() {
+async function init() {
     state.ui.currentDate = document.getElementById('current-date');
     state.ui.loading = document.getElementById('loading');
     state.ui.exercisesContainer = document.getElementById('exercises-container');
@@ -1084,6 +1124,8 @@ function init() {
             switchTab(button.dataset.tab);
         });
     });
+
+    await loadStarterLibraryIfEmpty();
 
     renderLibraryManager();
     generateExercises();
