@@ -1054,10 +1054,6 @@ function switchTab(tabName) {
     state.ui.tabPanels.forEach((panel) => {
         panel.classList.toggle('is-active', panel.dataset.tabpanel === tabName);
     });
-
-    state.ui.tabButtons.forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.tab === tabName);
-    });
 }
 
 async function init() {
@@ -1074,13 +1070,16 @@ async function init() {
     state.ui.exportLibraryBtn = document.getElementById('export-library-btn');
     state.ui.importLibraryInput = document.getElementById('import-library-input');
     state.ui.newSeedBtn = document.getElementById('new-seed-btn');
+    state.ui.openConfigBtn = document.getElementById('open-config-btn');
+    state.ui.openHistoryBtn = document.getElementById('open-history-btn');
+    state.ui.backFromConfigBtn = document.getElementById('back-from-config-btn');
+    state.ui.backFromHistoryBtn = document.getElementById('back-from-history-btn');
     state.ui.historyPrevMonthBtn = document.getElementById('history-prev-month-btn');
     state.ui.historyNextMonthBtn = document.getElementById('history-next-month-btn');
     state.ui.historyMonthLabel = document.getElementById('history-month-label');
     state.ui.historyCalendar = document.getElementById('history-calendar');
     state.ui.historyDayHeading = document.getElementById('history-day-heading');
     state.ui.historyDayList = document.getElementById('history-day-list');
-    state.ui.tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
     state.ui.tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
 
     state.ui.currentDate.textContent = `Exercises for ${state.dateString}`;
@@ -1089,6 +1088,10 @@ async function init() {
     state.ui.addExerciseBtn.addEventListener('click', addExercise);
     state.ui.exportLibraryBtn.addEventListener('click', exportLibraryJson);
     state.ui.newSeedBtn.addEventListener('click', generateNewSeed);
+    state.ui.openConfigBtn.addEventListener('click', () => switchTab('config'));
+    state.ui.openHistoryBtn.addEventListener('click', () => switchTab('history'));
+    state.ui.backFromConfigBtn.addEventListener('click', () => switchTab('exercise'));
+    state.ui.backFromHistoryBtn.addEventListener('click', () => switchTab('exercise'));
 
     state.ui.historyPrevMonthBtn.addEventListener('click', () => {
         state.historyViewMonth = shiftMonth(state.historyViewMonth, -1);
@@ -1117,12 +1120,6 @@ async function init() {
     state.ui.importLibraryInput.addEventListener('change', (event) => {
         const file = event.target.files && event.target.files[0];
         importLibraryFile(file);
-    });
-
-    state.ui.tabButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-            switchTab(button.dataset.tab);
-        });
     });
 
     await loadStarterLibraryIfEmpty();

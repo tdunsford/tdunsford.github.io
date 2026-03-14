@@ -15,7 +15,6 @@
     --accent: #0f766e;
     --accent-soft: #d5efed;
     --border: #d6e1e8;
-    --bottom-gesture-gap: 12px;
 }
 
 * {
@@ -37,15 +36,43 @@ body {
     padding: var(--s-4);
     box-shadow: 0 8px 24px rgba(18, 40, 58, 0.08);
     border: 1px solid var(--border);
-    padding-bottom: calc(var(--s-3) + 64px + env(safe-area-inset-bottom, 0px) + var(--bottom-gesture-gap));
+    padding-bottom: calc(var(--s-4) + env(safe-area-inset-bottom, 0px));
+}
+
+.page-header {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    align-items: center;
+    gap: var(--s-2);
+    margin-bottom: var(--s-2);
 }
 
 h1 {
     text-align: center;
     color: var(--text);
-    margin: 0 0 var(--s-2);
+    margin: 0;
     font-size: 1.55rem;
     letter-spacing: -0.02em;
+}
+
+.header-icon-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #b7cad8;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #25495f;
+    font-size: 1.05rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.header-icon-btn:hover {
+    background: #f1f8fc;
+    border-color: #8db0c7;
 }
 
 .date-display {
@@ -67,39 +94,20 @@ h1 {
     display: block;
 }
 
-.bottom-tab-bar {
-    position: fixed;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-gesture-gap));
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(100%, 540px);
-    padding: var(--s-1);
-    padding-bottom: var(--s-1);
-    background: #f4f8fb;
-    box-shadow: 0 -6px 18px rgba(18, 40, 58, 0.08);
-    border: 1px solid var(--border);
-    border-radius: 12px 12px 0 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    z-index: 1000;
-}
-
-.tab-btn {
-    min-height: 40px;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    background: transparent;
-    color: #335566;
-    font-size: 0.84rem;
+.view-back-btn {
+    min-height: 30px;
+    border: 1px solid #b9cedc;
+    background: #ffffff;
+    color: #234758;
+    border-radius: 7px;
+    padding: 0 10px;
+    font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
 }
 
-.tab-btn.is-active {
-    background: #ffffff;
-    border-color: #b8ccda;
-    color: #10374f;
+.view-back-btn:hover {
+    background: #eef5fa;
 }
 
 .library-panel {
@@ -650,7 +658,7 @@ h1 {
 
     .container {
         padding: var(--s-3);
-        padding-bottom: calc(var(--s-3) + 58px + env(safe-area-inset-bottom, 0px) + var(--bottom-gesture-gap));
+        padding-bottom: calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
     }
 
     h1 {

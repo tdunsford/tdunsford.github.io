@@ -6,17 +6,22 @@
     <meta name="theme-color" content="#0b6e4f">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Exercise">
-    <title>Daily Exercise Selector</title>
+    <meta name="apple-mobile-web-app-title" content="Daily Exercise">
+    <title>Daily Exercise</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Daily Exercise Selector</h1>
+        <div class="page-header">
+            <button id="open-config-btn" class="header-icon-btn" type="button" aria-label="Open config">⚙</button>
+            <h1>Daily Exercise</h1>
+            <button id="open-history-btn" class="header-icon-btn" type="button" aria-label="Open history">📅</button>
+        </div>
+
         <div class="tab-content">
-            <section id="tab-exercise" class="tab-panel is-active" data-tabpanel="exercise" aria-labelledby="tab-btn-exercise">
+            <section id="tab-exercise" class="tab-panel is-active" data-tabpanel="exercise">
                 <div class="date-display" id="current-date">Loading...</div>
 
                 <div id="loading" class="loading">Loading exercises...</div>
@@ -26,8 +31,9 @@
                 </div>
             </section>
 
-            <section id="tab-config" class="tab-panel" data-tabpanel="config" aria-labelledby="tab-btn-config">
+            <section id="tab-config" class="tab-panel" data-tabpanel="config">
                 <section class="library-panel" aria-labelledby="library-heading">
+                    <button id="back-from-config-btn" class="view-back-btn" type="button">Back to Exercise</button>
                     <h2 id="library-heading">Exercise Library</h2>
 
                     <div class="control-row">
@@ -52,8 +58,9 @@
                 </section>
             </section>
 
-            <section id="tab-history" class="tab-panel" data-tabpanel="history" aria-labelledby="tab-btn-history">
+            <section id="tab-history" class="tab-panel" data-tabpanel="history">
                 <section class="history-panel" aria-labelledby="history-heading">
+                    <button id="back-from-history-btn" class="view-back-btn" type="button">Back to Exercise</button>
                     <div class="history-header">
                         <h2 id="history-heading">History</h2>
                         <div class="history-nav">
@@ -71,11 +78,6 @@
             </section>
         </div>
 
-        <nav class="bottom-tab-bar" aria-label="Primary">
-            <button id="tab-btn-exercise" class="tab-btn is-active" type="button" data-tab="exercise">Exercise</button>
-            <button id="tab-btn-config" class="tab-btn" type="button" data-tab="config">Config</button>
-            <button id="tab-btn-history" class="tab-btn" type="button" data-tab="history">History</button>
-        </nav>
     </div>
 
     <script src="script.js"></script>
