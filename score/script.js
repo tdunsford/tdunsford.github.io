@@ -5,17 +5,65 @@ const STORAGE_KEYS = {
     settings: "scorekeeper.settings.v1"
 };
 
+const PLAYER_EMOJI_CATEGORIES = [
+    {
+        label: "Faces",
+        emojis: ["🙂", "😀", "😄", "😁", "😎", "🤩", "🥳", "😇", "😉", "😊", "😍", "😘", "🤗", "🤓", "🧐", "🤠", "🥸", "😺", "😸", "😻"]
+    },
+    {
+        label: "People",
+        emojis: ["🧑", "👨", "👩", "👦", "👧", "👶", "🧒", "👨‍🦱", "👩‍🦱", "👨‍🦰", "👩‍🦰", "👱", "👨‍🦳", "👩‍🦳", "👨‍🦲", "👩‍🦲", "🧔", "👨‍🧔", "👩‍🧔", "👴", "👵", "🧓", "👲", "🧕"]
+    },
+    {
+        label: "Roles",
+        emojis: ["👮", "🕵️", "💂", "👷", "🤴", "👸", "👳", "🧑‍🎓", "🧑‍🏫", "🧑‍⚕️", "🧑‍🍳", "🧑‍🌾", "🧑‍🔧", "🧑‍🏭", "🧑‍💼", "🧑‍🔬", "🧑‍💻", "🧑‍🎤", "🧑‍🎨", "🧑‍✈️", "🧑‍🚀", "🧑‍🚒", "🥷", "🧙", "🧛", "🧜", "🧝", "🧞", "🧟"]
+    },
+    {
+        label: "Action",
+        emojis: ["🙌", "👏", "👍", "👎", "👋", "🤝", "🙏", "💪", "🧠", "❤️", "🔥", "⭐", "🌈", "☀️", "🌙", "⚡", "🙍", "🙎", "🙅", "🙆", "💁", "🙋", "🧏", "🙇", "🤦", "🤷", "💃", "🕺", "🧍", "🧎", "🏃", "🚶", "🧘", "🏋️", "🤸", "⛹️", "🤾", "🚴", "🧗", "🏄", "🏊", "🤽", "🚣", "🧑‍🦽", "🧑‍🦼"]
+    },
+    {
+        label: "Animals",
+        emojis: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🦄", "🐝", "🦋", "🐢", "🐙", "🦖"]
+    },
+    {
+        label: "Nature",
+        emojis: ["🌸", "🌻", "🌵", "🍀", "🌍", "🪐"]
+    },
+    {
+        label: "Food",
+        emojis: ["🍎", "🍊", "🍋", "🍉", "🍇", "🍓", "🍒", "🍑", "🍍", "🥥", "🍔", "🍕", "🌭", "🍟", "🌮", "🌯", "🍜", "🍣", "🍪", "🍩", "🍿", "🎂", "☕", "🍺"]
+    },
+    {
+        label: "Games",
+        emojis: ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🎱", "🏓", "🎯", "🎮", "🎲", "🧩", "🏆", "🥇"]
+    },
+    {
+        label: "Music",
+        emojis: ["🎸", "🎹", "🥁", "🎤", "🎧", "🪩"]
+    },
+    {
+        label: "Objects",
+        emojis: ["📱", "💻", "⌚", "🚗", "✈️", "🚀", "🎉", "🎈", "🎁", "💎", "🛟", "🧸"]
+    }
+];
+const DEFAULT_PLAYER_EMOJI = "🙂";
+const HISTORY_DELETE_WINDOW_MS = 30 * 60 * 1000;
+
 const state = {
     players: [],
     activeGame: null,
     history: [],
     settings: {
-        showArchivedPlayers: false
+        showArchivedPlayers: false,
+        currentGameSort: "alpha"
     },
     draft: {
-        selectedPlayerIds: []
+        selectedPlayerIds: [],
+        selectedPlayerEmoji: DEFAULT_PLAYER_EMOJI
     },
     scoreDialogPlayerId: null,
+    editingPlayerId: null,
     scoreMode: "add",
     highlightedPlayerId: null,
     highlightedScoreAmount: null
@@ -28,13 +76,14 @@ const el = {
     newGameForm: document.getElementById("new-game-form"),
     gameNameInput: document.getElementById("game-name-input"),
     playerNameInput: document.getElementById("player-name-input"),
-    addPlayerBtn: document.getElementById("add-player-btn"),
-    selectedPlayers: document.getElementById("selected-players"),
-    selectedPlayerCount: document.getElementById("selected-player-count"),
+    playerEmojiPicker: document.getElementById("player-emoji-picker"),
+    openPlayerDialogBtn: document.getElementById("open-player-dialog-btn"),
     savedPlayers: document.getElementById("saved-players"),
     savedSuggestions: document.getElementById("player-suggestions"),
     toggleArchivedBtn: document.getElementById("toggle-archived-btn"),
-    clearSelectedBtn: document.getElementById("clear-selected-btn"),
+    sortControls: document.getElementById("sort-controls"),
+    sortScoreBtn: document.getElementById("sort-score-btn"),
+    sortAlphaBtn: document.getElementById("sort-alpha-btn"),
     activeGamePanel: document.getElementById("active-game-panel"),
     activeGameEmpty: document.getElementById("active-game-empty"),
     activePlayers: document.getElementById("active-players"),
@@ -61,6 +110,10 @@ const el = {
     scoreModeSubtract: document.getElementById("score-mode-subtract"),
     scoreAmountInput: document.getElementById("score-amount-input"),
     scoreCancelBtn: document.getElementById("score-cancel-btn"),
+    playerDialog: document.getElementById("player-dialog"),
+    playerForm: document.getElementById("player-form"),
+    playerDialogTitle: document.getElementById("player-dialog-title"),
+    playerCancelBtn: document.getElementById("player-cancel-btn"),
     historyTemplate: document.getElementById("history-item-template")
 };
 
@@ -94,8 +147,13 @@ function hydrate() {
     state.history = loadJson(STORAGE_KEYS.history, []);
     state.settings = {
         showArchivedPlayers: false,
+        currentGameSort: "alpha",
         ...loadJson(STORAGE_KEYS.settings, {})
     };
+    state.players = state.players.map((player) => ({
+        ...player,
+        emoji: player.emoji || DEFAULT_PLAYER_EMOJI
+    }));
 }
 
 function normalizeName(name) {
@@ -115,15 +173,21 @@ function getPlayerName(playerId) {
     return player ? player.name : "Unknown player";
 }
 
+function getPlayerEmoji(playerId) {
+    const player = getPlayerById(playerId);
+    return player ? (player.emoji || DEFAULT_PLAYER_EMOJI) : DEFAULT_PLAYER_EMOJI;
+}
+
 function getExistingPlayerByNormalizedName(name) {
     const normalized = normalizeName(name).toLocaleLowerCase();
     return state.players.find((player) => normalizeName(player.name).toLocaleLowerCase() === normalized) || null;
 }
 
-function createPlayer(name) {
+function createPlayer(name, emoji = DEFAULT_PLAYER_EMOJI) {
     const player = {
         id: uid("player"),
         name: normalizeName(name),
+        emoji: emoji || DEFAULT_PLAYER_EMOJI,
         createdAt: new Date().toISOString(),
         archived: false
     };
@@ -133,12 +197,12 @@ function createPlayer(name) {
     return player;
 }
 
-function ensurePlayer(name) {
+function ensurePlayer(name, emoji = DEFAULT_PLAYER_EMOJI) {
     const normalized = normalizeName(name);
     if (!normalized) {
         return null;
     }
-    return getExistingPlayerByNormalizedName(normalized) || createPlayer(normalized);
+    return getExistingPlayerByNormalizedName(normalized) || createPlayer(normalized, emoji);
 }
 
 function defaultGameName() {
@@ -154,9 +218,13 @@ function activeGamePlayers() {
         return {
             id: playerId,
             name: player ? player.name : "Unknown player",
+            emoji: player ? (player.emoji || DEFAULT_PLAYER_EMOJI) : DEFAULT_PLAYER_EMOJI,
             score: state.activeGame.scores[playerId] || 0
         };
     }).sort((a, b) => {
+        if (state.settings.currentGameSort === "alpha") {
+            return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        }
         if (b.score !== a.score) {
             return b.score - a.score;
         }
@@ -182,6 +250,7 @@ function startGame(gameName, playerIds) {
         events: [],
         status: "active"
     };
+    state.settings.currentGameSort = "alpha";
     persist();
     render();
 }
@@ -194,23 +263,24 @@ function addSelectedPlayer(playerId) {
     renderNewGame();
 }
 
+function toggleSelectedPlayer(playerId) {
+    if (!playerId) {
+        return;
+    }
+    if (state.draft.selectedPlayerIds.includes(playerId)) {
+        removeSelectedPlayer(playerId);
+        return;
+    }
+    addSelectedPlayer(playerId);
+}
+
 function removeSelectedPlayer(playerId) {
     state.draft.selectedPlayerIds = state.draft.selectedPlayerIds.filter((id) => id !== playerId);
     renderNewGame();
 }
 
 function addPlayerFromInput() {
-    const value = normalizeName(el.playerNameInput.value);
-    if (!value) {
-        el.playerNameInput.focus();
-        return;
-    }
-    const player = ensurePlayer(value);
-    if (player) {
-        addSelectedPlayer(player.id);
-    }
-    el.playerNameInput.value = "";
-    render();
+    submitPlayerForm();
 }
 
 function setScore(playerId, amount) {
@@ -289,8 +359,10 @@ function finishGame() {
     const completedAt = new Date().toISOString();
     const winners = computeWinners(state.activeGame.scores, state.activeGame.playerIds);
     const playerNames = {};
+    const playerEmojis = {};
     state.activeGame.playerIds.forEach((playerId) => {
         playerNames[playerId] = getPlayerName(playerId);
+        playerEmojis[playerId] = getPlayerEmoji(playerId);
     });
     const summary = {
         id: state.activeGame.id,
@@ -300,6 +372,7 @@ function finishGame() {
         completedAt,
         playerIds: [...state.activeGame.playerIds],
         playerNames,
+        playerEmojis,
         scores: { ...state.activeGame.scores },
         winners,
         eventCount: state.activeGame.events.length
@@ -330,20 +403,11 @@ function renamePlayer(playerId) {
     if (!player) {
         return;
     }
-    const nextName = window.prompt("Rename player", player.name);
-    const normalized = normalizeName(nextName);
-    if (!normalized || normalized === player.name) {
-        return;
-    }
-    const duplicate = getExistingPlayerByNormalizedName(normalized);
-    if (duplicate && duplicate.id !== playerId) {
-        window.alert("A player with that name already exists.");
-        return;
-    }
-    player.name = normalized;
-    state.players.sort(playerSort);
-    persist();
-    render();
+    openPlayerDialog(playerId);
+}
+
+function hasPlayerHistory(playerId) {
+    return state.history.some((game) => Array.isArray(game.playerIds) && game.playerIds.includes(playerId));
 }
 
 function toggleArchived(playerId) {
@@ -351,9 +415,38 @@ function toggleArchived(playerId) {
     if (!player) {
         return;
     }
+    if (!player.archived && !hasPlayerHistory(playerId)) {
+        state.players = state.players.filter((entry) => entry.id !== playerId);
+        state.draft.selectedPlayerIds = state.draft.selectedPlayerIds.filter((id) => id !== playerId);
+        persist();
+        render();
+        return;
+    }
     player.archived = !player.archived;
     persist();
     render();
+}
+
+function canDeleteHistoryEntry(game) {
+    if (!game?.completedAt) {
+        return false;
+    }
+    const completedTime = new Date(game.completedAt).getTime();
+    return Number.isFinite(completedTime) && (Date.now() - completedTime) <= HISTORY_DELETE_WINDOW_MS;
+}
+
+function deleteHistoryEntry(gameId) {
+    const game = state.history.find((entry) => entry.id === gameId);
+    if (!game || !canDeleteHistoryEntry(game)) {
+        return;
+    }
+    const confirmed = window.confirm(`Delete "${game.name}" from history?`);
+    if (!confirmed) {
+        return;
+    }
+    state.history = state.history.filter((entry) => entry.id !== gameId);
+    persist();
+    renderHistory();
 }
 
 function exportData() {
@@ -439,6 +532,71 @@ function closeScoreDialog() {
     el.scoreDialog.close();
 }
 
+function openPlayerDialog(playerId = null) {
+    state.editingPlayerId = playerId;
+    const player = playerId ? getPlayerById(playerId) : null;
+    el.playerDialogTitle.textContent = player ? "Rename Player" : "Add Player";
+    el.playerNameInput.value = player ? player.name : "";
+    state.draft.selectedPlayerEmoji = player ? (player.emoji || DEFAULT_PLAYER_EMOJI) : (state.draft.selectedPlayerEmoji || DEFAULT_PLAYER_EMOJI);
+    renderPlayerEmojiPicker();
+    if (typeof el.playerDialog.showModal === "function") {
+        el.playerDialog.showModal();
+        window.requestAnimationFrame(() => {
+            el.playerNameInput.focus({ preventScroll: true });
+            el.playerNameInput.select();
+        });
+    }
+}
+
+function closePlayerDialog() {
+    state.editingPlayerId = null;
+    el.playerDialog.close();
+}
+
+function submitPlayerForm() {
+    const name = normalizeName(el.playerNameInput.value);
+    const emoji = sanitizeEmoji(state.draft.selectedPlayerEmoji);
+
+    if (!name) {
+        el.playerNameInput.focus();
+        return;
+    }
+
+    if (state.editingPlayerId) {
+        const player = getPlayerById(state.editingPlayerId);
+        if (!player) {
+            closePlayerDialog();
+            return;
+        }
+        const duplicate = getExistingPlayerByNormalizedName(name);
+        if (duplicate && duplicate.id !== state.editingPlayerId) {
+            window.alert("A player with that name already exists.");
+            return;
+        }
+        player.name = name;
+        player.emoji = emoji;
+        state.players.sort(playerSort);
+        persist();
+        render();
+        closePlayerDialog();
+        return;
+    }
+
+    const existing = getExistingPlayerByNormalizedName(name);
+    if (existing) {
+        addSelectedPlayer(existing.id);
+        closePlayerDialog();
+        render();
+        return;
+    }
+
+    const player = createPlayer(name, emoji);
+    addSelectedPlayer(player.id);
+    state.draft.selectedPlayerEmoji = DEFAULT_PLAYER_EMOJI;
+    render();
+    closePlayerDialog();
+}
+
 function setScoreMode(mode) {
     state.scoreMode = mode === "subtract" ? "subtract" : "add";
     el.scoreDialog.dataset.mode = state.scoreMode;
@@ -498,6 +656,48 @@ function formatDate(iso) {
     });
 }
 
+function formatPlayerLabel(player) {
+    return `<span class="player-name-inline"><span class="player-emoji">${player.emoji || DEFAULT_PLAYER_EMOJI}</span><span>${player.name}</span></span>`;
+}
+
+function sanitizeEmoji(value) {
+    const normalized = String(value || "").trim();
+    return normalized || DEFAULT_PLAYER_EMOJI;
+}
+
+function renderPlayerEmojiPicker() {
+    el.playerEmojiPicker.innerHTML = "";
+    PLAYER_EMOJI_CATEGORIES.forEach((category) => {
+        const section = document.createElement("section");
+        section.className = "emoji-category";
+
+        const heading = document.createElement("h3");
+        heading.className = "emoji-category-title";
+        heading.textContent = category.label;
+        section.appendChild(heading);
+
+        const grid = document.createElement("div");
+        grid.className = "emoji-category-grid";
+
+        category.emojis.forEach((emoji) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = `button button-ghost emoji-choice${state.draft.selectedPlayerEmoji === emoji ? " is-active" : ""}`;
+            button.textContent = emoji;
+            button.setAttribute("aria-label", `Choose ${emoji}`);
+            button.setAttribute("aria-pressed", String(state.draft.selectedPlayerEmoji === emoji));
+            button.addEventListener("click", () => {
+                state.draft.selectedPlayerEmoji = emoji;
+                renderPlayerEmojiPicker();
+            });
+            grid.appendChild(button);
+        });
+
+        section.appendChild(grid);
+        el.playerEmojiPicker.appendChild(section);
+    });
+}
+
 function renderSuggestions() {
     el.savedSuggestions.innerHTML = "";
     state.players.filter((player) => !player.archived).forEach((player) => {
@@ -509,33 +709,6 @@ function renderSuggestions() {
 
 function renderNewGame() {
     const selectedIds = state.draft.selectedPlayerIds;
-    el.selectedPlayerCount.textContent = `${selectedIds.length} player${selectedIds.length === 1 ? "" : "s"}`;
-    el.selectedPlayers.innerHTML = "";
-
-    if (!selectedIds.length) {
-        el.selectedPlayers.className = "chip-list empty-state-inline";
-        el.selectedPlayers.textContent = "No players selected yet.";
-    } else {
-        el.selectedPlayers.className = "chip-list";
-        selectedIds.forEach((playerId) => {
-            const player = getPlayerById(playerId);
-            if (!player) {
-                return;
-            }
-            const chip = document.createElement("div");
-            chip.className = "player-chip";
-            chip.innerHTML = `<span>${player.name}</span>`;
-            const removeButton = document.createElement("button");
-            removeButton.className = "button button-ghost chip-remove-button";
-            removeButton.type = "button";
-            removeButton.textContent = "-";
-            removeButton.setAttribute("aria-label", `Remove ${player.name}`);
-            removeButton.addEventListener("click", () => removeSelectedPlayer(playerId));
-            chip.appendChild(removeButton);
-            el.selectedPlayers.appendChild(chip);
-        });
-    }
-
     const visiblePlayers = state.players.filter((player) => state.settings.showArchivedPlayers || !player.archived);
     el.savedPlayers.innerHTML = "";
     if (!visiblePlayers.length) {
@@ -547,7 +720,7 @@ function renderNewGame() {
             const row = document.createElement("div");
             row.className = "player-row";
             const label = document.createElement("div");
-            label.innerHTML = `<strong>${player.name}</strong>${player.archived ? ' <span class="muted">(archived)</span>' : ""}`;
+            label.innerHTML = `${formatPlayerLabel(player)}${player.archived ? ' <span class="muted">(archived)</span>' : ""}`;
             const actions = document.createElement("div");
             actions.className = "player-row-actions";
 
@@ -555,16 +728,9 @@ function renderNewGame() {
             toggleButton.type = "button";
             toggleButton.className = "button button-secondary";
             toggleButton.textContent = selectedIds.includes(player.id) ? "Selected" : "Pick";
-            toggleButton.disabled = selectedIds.includes(player.id);
-            toggleButton.addEventListener("click", () => addSelectedPlayer(player.id));
+            toggleButton.addEventListener("click", () => toggleSelectedPlayer(player.id));
 
-            const archiveButton = document.createElement("button");
-            archiveButton.type = "button";
-            archiveButton.className = "button button-ghost";
-            archiveButton.textContent = player.archived ? "Unarchive" : "Archive";
-            archiveButton.addEventListener("click", () => toggleArchived(player.id));
-
-            actions.append(toggleButton, archiveButton);
+            actions.append(toggleButton);
             row.append(label, actions);
             el.savedPlayers.appendChild(row);
         });
@@ -580,6 +746,7 @@ function renderActiveGame() {
         el.activeGamePanel.hidden = true;
         el.activeGameEmpty.hidden = true;
         el.resumeGameBtn.hidden = true;
+        el.sortControls.hidden = true;
         return;
     }
 
@@ -587,6 +754,13 @@ function renderActiveGame() {
     el.activeGamePanel.hidden = false;
     el.activeGameEmpty.hidden = true;
     el.resumeGameBtn.hidden = false;
+    el.sortControls.hidden = false;
+    el.sortScoreBtn.classList.toggle("is-active", state.settings.currentGameSort === "score");
+    el.sortScoreBtn.classList.toggle("button-secondary", state.settings.currentGameSort === "score");
+    el.sortScoreBtn.classList.toggle("button-ghost", state.settings.currentGameSort !== "score");
+    el.sortAlphaBtn.classList.toggle("is-active", state.settings.currentGameSort === "alpha");
+    el.sortAlphaBtn.classList.toggle("button-secondary", state.settings.currentGameSort === "alpha");
+    el.sortAlphaBtn.classList.toggle("button-ghost", state.settings.currentGameSort !== "alpha");
     el.activePlayers.innerHTML = "";
 
     activeGamePlayers().forEach((player) => {
@@ -603,7 +777,7 @@ function renderActiveGame() {
             <div class="score-card-top">
                 <div class="score-card-main">
                     <div class="score-card-label">
-                        <h3>${player.name}</h3>
+                        <h3>${formatPlayerLabel(player)}</h3>
                     </div>
                     <div class="score-inline">
                         ${deltaLabel}
@@ -653,9 +827,6 @@ function renderHistory() {
         fragment.querySelector(".history-title").textContent = game.name;
         fragment.querySelector(".history-meta").textContent = `${formatDate(game.completedAt)} • ${game.eventCount || 0} events`;
 
-        const winnerNames = game.winners.map((playerId) => game.playerNames?.[playerId] || getPlayerName(playerId)).join(", ");
-        fragment.querySelector(".history-winner").textContent = game.winners.length > 1 ? `Tie: ${winnerNames}` : `Winner: ${winnerNames}`;
-
         const scoresWrap = fragment.querySelector(".history-scores");
         game.playerIds
             .map((playerId) => ({ playerId, score: game.scores[playerId] || 0 }))
@@ -663,9 +834,24 @@ function renderHistory() {
             .forEach((entry) => {
                 const row = document.createElement("div");
                 row.className = "history-score-row";
-                row.innerHTML = `<strong>${game.playerNames?.[entry.playerId] || getPlayerName(entry.playerId)}</strong><p class="muted">${entry.score} points</p>`;
+                if (game.winners.includes(entry.playerId)) {
+                    row.classList.add("is-winner");
+                }
+                row.innerHTML = `<strong>${formatPlayerLabel({ emoji: game.playerEmojis?.[entry.playerId] || getPlayerEmoji(entry.playerId), name: game.playerNames?.[entry.playerId] || getPlayerName(entry.playerId) })}</strong><p class="muted">${entry.score} points</p>`;
                 scoresWrap.appendChild(row);
             });
+
+        if (canDeleteHistoryEntry(game)) {
+            const actionRow = document.createElement("div");
+            actionRow.className = "history-actions";
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "button button-ghost";
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () => deleteHistoryEntry(game.id));
+            actionRow.appendChild(deleteButton);
+            fragment.querySelector(".history-card").appendChild(actionRow);
+        }
 
         el.historyList.appendChild(fragment);
     });
@@ -686,7 +872,7 @@ function renderDirectory() {
 
         const info = document.createElement("div");
         info.innerHTML = `
-            <strong>${player.name}</strong>
+            <strong>${formatPlayerLabel(player)}</strong>
             <p class="muted">Added ${formatDate(player.createdAt)}${player.archived ? " • archived" : ""}</p>
         `;
 
@@ -738,22 +924,22 @@ function handleStartGame(event) {
 }
 
 function bindEvents() {
-    el.addPlayerBtn.addEventListener("click", addPlayerFromInput);
-    el.playerNameInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            addPlayerFromInput();
-        }
-    });
+    el.openPlayerDialogBtn.addEventListener("click", () => openPlayerDialog());
     el.newGameForm.addEventListener("submit", handleStartGame);
     el.toggleArchivedBtn.addEventListener("click", () => {
         state.settings.showArchivedPlayers = !state.settings.showArchivedPlayers;
         persist();
         renderNewGame();
     });
-    el.clearSelectedBtn.addEventListener("click", () => {
-        state.draft.selectedPlayerIds = [];
-        renderNewGame();
+    el.sortScoreBtn.addEventListener("click", () => {
+        state.settings.currentGameSort = "score";
+        persist();
+        renderActiveGame();
+    });
+    el.sortAlphaBtn.addEventListener("click", () => {
+        state.settings.currentGameSort = "alpha";
+        persist();
+        renderActiveGame();
     });
     el.finishGameBtn.addEventListener("click", finishGame);
     el.abandonGameBtn.addEventListener("click", abandonGame);
@@ -773,6 +959,11 @@ function bindEvents() {
         document.getElementById("current-game-heading").scrollIntoView({ behavior: "smooth", block: "start" });
     });
     el.scoreCancelBtn.addEventListener("click", closeScoreDialog);
+    el.playerCancelBtn.addEventListener("click", closePlayerDialog);
+    el.playerForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitPlayerForm();
+    });
     el.scoreModeToggle.addEventListener("click", (event) => {
         const button = event.target.closest(".mode-button");
         if (!button) {

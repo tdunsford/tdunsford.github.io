@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Scorekeeper</title>
     <link rel="stylesheet" href="styles.css?v=20260419-1">
 </head>
@@ -26,10 +26,8 @@
             <section id="new-game-panel" class="panel panel-main" aria-labelledby="new-game-heading">
                 <div class="panel-heading">
                     <div>
-                        <p class="section-kicker">Setup</p>
                         <h2 id="new-game-heading">New Game</h2>
                     </div>
-                    <span id="selected-player-count" class="pill">0 players</span>
                 </div>
 
                 <form id="new-game-form" class="stack-lg">
@@ -41,21 +39,12 @@
                     <div class="field">
                         <div class="field-label-row">
                             <span>Add players</span>
-                            <span class="field-hint">Type a new name or pick existing players</span>
+                            <span class="field-hint">Create a player or pick existing players</span>
                         </div>
                         <div class="player-adder">
-                            <input id="player-name-input" name="playerName" type="text" maxlength="40" list="player-suggestions" placeholder="Add player name">
-                            <button id="add-player-btn" class="button button-secondary" type="button">Add</button>
+                            <button id="open-player-dialog-btn" class="button button-secondary" type="button">Add Player</button>
                         </div>
                         <datalist id="player-suggestions"></datalist>
-                    </div>
-
-                    <div class="subsection">
-                        <div class="subsection-heading">
-                            <h3>Selected Players</h3>
-                            <button id="clear-selected-btn" class="button button-ghost" type="button">Clear</button>
-                        </div>
-                        <div id="selected-players" class="chip-list empty-state-inline"></div>
                     </div>
 
                     <div class="subsection">
@@ -76,6 +65,10 @@
                 <div class="panel-heading">
                     <div>
                         <h2 id="current-game-heading">Current Game</h2>
+                    </div>
+                    <div id="sort-controls" class="sort-controls" hidden>
+                        <button id="sort-alpha-btn" class="button button-secondary sort-button is-active" type="button">A-Z</button>
+                        <button id="sort-score-btn" class="button button-ghost sort-button" type="button">Score</button>
                     </div>
                 </div>
 
@@ -106,7 +99,6 @@
         <section id="history-panel" class="panel panel-full" aria-labelledby="history-heading">
             <div class="panel-heading">
                 <div>
-                    <p class="section-kicker">Record</p>
                     <h2 id="history-heading">History</h2>
                 </div>
                 <span id="history-count" class="pill">0 games</span>
@@ -117,7 +109,6 @@
         <section id="players-panel" class="panel panel-full" aria-labelledby="players-heading">
             <div class="panel-heading">
                 <div>
-                    <p class="section-kicker">Directory</p>
                     <h2 id="players-heading">Players</h2>
                 </div>
             </div>
@@ -127,7 +118,6 @@
         <section id="backup-panel" class="panel panel-full" aria-labelledby="backup-heading">
             <div class="panel-heading">
                 <div>
-                    <p class="section-kicker">Backup</p>
                     <h2 id="backup-heading">Local Data Tools</h2>
                 </div>
             </div>
@@ -166,6 +156,30 @@
         </form>
     </dialog>
 
+    <dialog id="player-dialog" class="score-dialog">
+        <form id="player-form" method="dialog" class="stack-lg">
+            <div>
+                <p class="section-kicker">Player</p>
+                <h2 id="player-dialog-title">Add Player</h2>
+            </div>
+
+            <label class="field">
+                <span>Name</span>
+                <input id="player-name-input" name="playerName" type="text" maxlength="40" list="player-suggestions" placeholder="Add player name" required>
+            </label>
+
+            <div class="field">
+                <span>Emoji</span>
+                <div id="player-emoji-picker" class="emoji-picker-scroll" aria-label="Choose player emoji"></div>
+            </div>
+
+            <menu class="dialog-actions">
+                <button id="player-cancel-btn" class="button button-ghost" type="button">Cancel</button>
+                <button id="player-save-btn" class="button button-primary" type="submit">Save</button>
+            </menu>
+        </form>
+    </dialog>
+
     <template id="history-item-template">
         <article class="history-card">
             <div class="history-card-top">
@@ -173,7 +187,6 @@
                     <h3 class="history-title"></h3>
                     <p class="muted history-meta"></p>
                 </div>
-                <span class="pill history-winner"></span>
             </div>
             <div class="history-scores"></div>
         </article>
