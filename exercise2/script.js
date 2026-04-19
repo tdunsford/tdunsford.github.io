@@ -3,6 +3,7 @@ const LIBRARY_VERSION = 1;
 const HISTORY_STORAGE_KEY = 'exerciseHistory_v1';
 const HISTORY_VERSION = 1;
 const EXTRA_SEED_STORAGE_KEY = 'extraSeed';
+const STARTER_LIBRARY_PATH = './starter.json';
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -141,6 +142,23 @@ function validateLibrary(raw) {
     }
 
     return { ok: true, library };
+}
+
+function getExerciseCount(library) {
+    if (!library || !Array.isArray(library.categories)) return 0;
+
+    return library.categories.reduce((total, category) => {
+        const exercises = Array.isArray(category && category.exercises) ? category.exercises.length : 0;
+        return total + exercises;
+    }, 0);
+}
+
+function extractLibraryFromPayload(payload) {
+    if (payload && typeof payload === 'object' && !Array.isArray(payload) && payload.library) {
+        return validateLibrary(payload.library);
+    }
+
+    return validateLibrary(payload);
 }
 
 function normalizeHistory(raw) {
@@ -371,6 +389,28 @@ function setStatus(message, isError) {
             el.classList.remove('has-error');
             state.statusTimer = null;
         }, 2500);
+    }
+}
+
+async function loadStarterLibraryIfEmpty() {
+    if (getExerciseCount(state.library) > 0) return false;
+
+    try {
+        const response = await fetch(STARTER_LIBRARY_PATH, { cache: 'no-store' });
+        if (!response.ok) return false;
+
+        const payload = await response.json();
+        const validation = extractLibraryFromPayload(payload);
+        if (!validation.ok) return false;
+        if (getExerciseCount(validation.library) === 0) return false;
+
+        state.library = validation.library;
+        clearAllOverrideKeys();
+        saveLibrary();
+        setStatus('Starter library loaded.', false);
+        return true;
+    } catch {
+        return false;
     }
 }
 
@@ -1014,13 +1054,9 @@ function switchTab(tabName) {
     state.ui.tabPanels.forEach((panel) => {
         panel.classList.toggle('is-active', panel.dataset.tabpanel === tabName);
     });
-
-    state.ui.tabButtons.forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.tab === tabName);
-    });
 }
 
-function init() {
+async function init() {
     state.ui.currentDate = document.getElementById('current-date');
     state.ui.loading = document.getElementById('loading');
     state.ui.exercisesContainer = document.getElementById('exercises-container');
@@ -1034,13 +1070,16 @@ function init() {
     state.ui.exportLibraryBtn = document.getElementById('export-library-btn');
     state.ui.importLibraryInput = document.getElementById('import-library-input');
     state.ui.newSeedBtn = document.getElementById('new-seed-btn');
+    state.ui.openConfigBtn = document.getElementById('open-config-btn');
+    state.ui.openHistoryBtn = document.getElementById('open-history-btn');
+    state.ui.backFromConfigBtn = document.getElementById('back-from-config-btn');
+    state.ui.backFromHistoryBtn = document.getElementById('back-from-history-btn');
     state.ui.historyPrevMonthBtn = document.getElementById('history-prev-month-btn');
     state.ui.historyNextMonthBtn = document.getElementById('history-next-month-btn');
     state.ui.historyMonthLabel = document.getElementById('history-month-label');
     state.ui.historyCalendar = document.getElementById('history-calendar');
     state.ui.historyDayHeading = document.getElementById('history-day-heading');
     state.ui.historyDayList = document.getElementById('history-day-list');
-    state.ui.tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
     state.ui.tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
 
     state.ui.currentDate.textContent = `Exercises for ${state.dateString}`;
@@ -1049,6 +1088,10 @@ function init() {
     state.ui.addExerciseBtn.addEventListener('click', addExercise);
     state.ui.exportLibraryBtn.addEventListener('click', exportLibraryJson);
     state.ui.newSeedBtn.addEventListener('click', generateNewSeed);
+    state.ui.openConfigBtn.addEventListener('click', () => switchTab('config'));
+    state.ui.openHistoryBtn.addEventListener('click', () => switchTab('history'));
+    state.ui.backFromConfigBtn.addEventListener('click', () => switchTab('exercise'));
+    state.ui.backFromHistoryBtn.addEventListener('click', () => switchTab('exercise'));
 
     state.ui.historyPrevMonthBtn.addEventListener('click', () => {
         state.historyViewMonth = shiftMonth(state.historyViewMonth, -1);
@@ -1079,11 +1122,7 @@ function init() {
         importLibraryFile(file);
     });
 
-    state.ui.tabButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-            switchTab(button.dataset.tab);
-        });
-    });
+    await loadStarterLibraryIfEmpty();
 
     renderLibraryManager();
     generateExercises();
