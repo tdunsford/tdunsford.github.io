@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Scorekeeper</title>
+    <link rel="stylesheet" href="styles.css?v=20260419-1">
+</head>
+<body>
+    <div class="app-shell">
+        <header id="hero-section" class="hero">
+            <div>
+                <p class="eyebrow">Offline scorekeeping</p>
+                <h1>Scorekeeper</h1>
+                <p class="hero-copy">Track players, run games, and keep the full record in local storage.</p>
+            </div>
+            <div class="hero-actions">
+                <button id="new-game-nav-btn" class="button button-primary" type="button">New Game</button>
+                <button id="resume-game-btn" class="button button-secondary" type="button" hidden>Resume Active Game</button>
+            </div>
+        </header>
+
+        <div id="app-message" class="app-message" hidden></div>
+
+        <main class="layout">
+            <section id="new-game-panel" class="panel panel-main" aria-labelledby="new-game-heading">
+                <div class="panel-heading">
+                    <div>
+                        <p class="section-kicker">Setup</p>
+                        <h2 id="new-game-heading">New Game</h2>
+                    </div>
+                    <span id="selected-player-count" class="pill">0 players</span>
+                </div>
+
+                <form id="new-game-form" class="stack-lg">
+                    <label class="field">
+                        <span>Game name</span>
+                        <input id="game-name-input" name="gameName" type="text" maxlength="80" placeholder="Friday cards, Trivia night, Dice game...">
+                    </label>
+
+                    <div class="field">
+                        <div class="field-label-row">
+                            <span>Add players</span>
+                            <span class="field-hint">Type a new name or pick existing players</span>
+                        </div>
+                        <div class="player-adder">
+                            <input id="player-name-input" name="playerName" type="text" maxlength="40" list="player-suggestions" placeholder="Add player name">
+                            <button id="add-player-btn" class="button button-secondary" type="button">Add</button>
+                        </div>
+                        <datalist id="player-suggestions"></datalist>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-heading">
+                            <h3>Selected Players</h3>
+                            <button id="clear-selected-btn" class="button button-ghost" type="button">Clear</button>
+                        </div>
+                        <div id="selected-players" class="chip-list empty-state-inline"></div>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-heading">
+                            <h3>Saved Players</h3>
+                            <button id="toggle-archived-btn" class="button button-ghost" type="button">Show Archived</button>
+                        </div>
+                        <div id="saved-players" class="player-list empty-state-inline"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="start-game-btn" class="button button-primary button-wide" type="submit">Start Game</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel panel-side" aria-labelledby="current-game-heading">
+                <div class="panel-heading">
+                    <div>
+                        <h2 id="current-game-heading">Current Game</h2>
+                    </div>
+                </div>
+
+                <div id="active-game-empty" class="empty-panel">
+                    <p>No game in progress.</p>
+                    <p class="muted">Start a game to track scores and keep a full timeline for undo and review.</p>
+                </div>
+
+                <section id="active-game-panel" class="stack-lg" hidden>
+                    <div id="active-players" class="score-grid"></div>
+
+                    <div class="game-summary-actions">
+                        <button id="finish-game-btn" class="button button-primary" type="button">Finish Game</button>
+                        <button id="abandon-game-btn" class="button button-ghost" type="button">Abandon</button>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-heading">
+                            <h3>Scoring Timeline</h3>
+                            <button id="undo-last-btn" class="button button-secondary" type="button">Undo Last</button>
+                        </div>
+                        <div id="event-log" class="timeline empty-state-inline"></div>
+                    </div>
+                </section>
+            </section>
+        </main>
+
+        <section id="history-panel" class="panel panel-full" aria-labelledby="history-heading">
+            <div class="panel-heading">
+                <div>
+                    <p class="section-kicker">Record</p>
+                    <h2 id="history-heading">History</h2>
+                </div>
+                <span id="history-count" class="pill">0 games</span>
+            </div>
+            <div id="history-list" class="history-list empty-state-inline"></div>
+        </section>
+
+        <section id="players-panel" class="panel panel-full" aria-labelledby="players-heading">
+            <div class="panel-heading">
+                <div>
+                    <p class="section-kicker">Directory</p>
+                    <h2 id="players-heading">Players</h2>
+                </div>
+            </div>
+            <div id="directory-list" class="directory-list empty-state-inline"></div>
+        </section>
+
+        <section id="backup-panel" class="panel panel-full" aria-labelledby="backup-heading">
+            <div class="panel-heading">
+                <div>
+                    <p class="section-kicker">Backup</p>
+                    <h2 id="backup-heading">Local Data Tools</h2>
+                </div>
+            </div>
+            <div class="backup-actions">
+                <button id="export-btn" class="button button-secondary" type="button">Export JSON</button>
+                <label class="button button-secondary file-button" for="import-input">Import JSON</label>
+                <input id="import-input" type="file" accept="application/json" hidden>
+                <button id="clear-data-btn" class="button button-danger" type="button">Clear All Data</button>
+            </div>
+            <p class="muted">Everything stays on this device unless you explicitly export it.</p>
+        </section>
+    </div>
+
+    <dialog id="score-dialog" class="score-dialog">
+        <form id="score-form" method="dialog" class="stack-lg">
+            <div>
+                <p class="section-kicker">Score</p>
+                <h2 id="score-dialog-title">Adjust Score</h2>
+                <p id="score-dialog-current" class="muted"></p>
+            </div>
+
+            <div class="mode-toggle" id="score-mode-toggle" role="group" aria-label="Score mode">
+                <button id="score-mode-add" class="button button-primary mode-button is-active" type="button" data-mode="add">Add</button>
+                <button id="score-mode-subtract" class="button button-ghost mode-button" type="button" data-mode="subtract">Subtract</button>
+            </div>
+
+            <label class="field">
+                <span id="score-amount-label">Points</span>
+                <input id="score-amount-input" name="scoreAmount" type="number" inputmode="numeric" step="1" enterkeyhint="done" required autofocus>
+            </label>
+
+            <menu class="dialog-actions">
+                <button id="score-cancel-btn" class="button button-ghost" type="button">Cancel</button>
+                <button id="score-save-btn" class="button button-primary" type="submit">Apply</button>
+            </menu>
+        </form>
+    </dialog>
+
+    <template id="history-item-template">
+        <article class="history-card">
+            <div class="history-card-top">
+                <div>
+                    <h3 class="history-title"></h3>
+                    <p class="muted history-meta"></p>
+                </div>
+                <span class="pill history-winner"></span>
+            </div>
+            <div class="history-scores"></div>
+        </article>
+    </template>
+
+    <script src="script.js?v=20260419-1"></script>
+</body>
+</html>
