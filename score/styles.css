@@ -395,6 +395,7 @@ body.game-active .panel-side {
 
 .score-grid {
     grid-template-columns: 1fr;
+    margin-top: 6px;
 }
 
 .score-card {
