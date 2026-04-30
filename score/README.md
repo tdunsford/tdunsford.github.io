@@ -1,10 +1,11 @@
-# Scorekeeper
+# MeepleKeeper
 
 Offline web app for tracking game scores on mobile.
 
 ## What It Does
 
 - Create a new game and select players from a saved list
+- Reuse game names from a dropdown or add a new one
 - Add new players with a name and emoji
 - Save players permanently in `localStorage`
 - Track scores during a game with add/subtract controls
@@ -34,9 +35,10 @@ Storage keys:
 ### Start a Game
 
 1. Open the app.
-2. Tap `Add Player` to create a player if needed.
-3. Pick players from the Saved Players list.
-4. Tap `Start Game`.
+2. Pick or add a game name.
+3. Tap `Add Player` to create a player if needed.
+4. Pick at least two players from the Saved Players list.
+5. Tap `Start Game`.
 
 ### Score a Game
 
@@ -64,4 +66,3 @@ Recent history entries can be deleted for 30 minutes after completion, which is 
 - Designed primarily for iPhone/mobile use
 - Works offline once the files are available locally
 - Asset URLs use version query strings to help with mobile browser caching
-

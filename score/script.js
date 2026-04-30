@@ -49,6 +49,7 @@ const PLAYER_EMOJI_CATEGORIES = [
 ];
 const DEFAULT_PLAYER_EMOJI = "🙂";
 const HISTORY_DELETE_WINDOW_MS = 30 * 60 * 1000;
+const ADD_GAME_NAME_VALUE = "__add_game_name__";
 
 const state = {
     players: [],
@@ -56,10 +57,12 @@ const state = {
     history: [],
     settings: {
         showArchivedPlayers: false,
-        currentGameSort: "alpha"
+        currentGameSort: "alpha",
+        activeTab: "games"
     },
     draft: {
         selectedPlayerIds: [],
+        selectedGameName: "",
         selectedPlayerEmoji: DEFAULT_PLAYER_EMOJI
     },
     scoreDialogPlayerId: null,
@@ -74,7 +77,11 @@ let scoreHighlightTimer = null;
 
 const el = {
     newGameForm: document.getElementById("new-game-form"),
-    gameNameInput: document.getElementById("game-name-input"),
+    gameNameSelect: document.getElementById("game-name-select"),
+    gameNameDialog: document.getElementById("game-name-dialog"),
+    gameNameForm: document.getElementById("game-name-form"),
+    newGameNameInput: document.getElementById("new-game-name-input"),
+    gameNameCancelBtn: document.getElementById("game-name-cancel-btn"),
     playerNameInput: document.getElementById("player-name-input"),
     playerEmojiPicker: document.getElementById("player-emoji-picker"),
     openPlayerDialogBtn: document.getElementById("open-player-dialog-btn"),
@@ -97,8 +104,9 @@ const el = {
     exportBtn: document.getElementById("export-btn"),
     importInput: document.getElementById("import-input"),
     clearDataBtn: document.getElementById("clear-data-btn"),
-    newGameNavBtn: document.getElementById("new-game-nav-btn"),
     resumeGameBtn: document.getElementById("resume-game-btn"),
+    tabButtons: [...document.querySelectorAll(".tab-button")],
+    tabPanels: [...document.querySelectorAll(".tab-panel")],
     appMessage: document.getElementById("app-message"),
     scoreDialog: document.getElementById("score-dialog"),
     scoreForm: document.getElementById("score-form"),
@@ -148,12 +156,14 @@ function hydrate() {
     state.settings = {
         showArchivedPlayers: false,
         currentGameSort: "alpha",
+        activeTab: "games",
         ...loadJson(STORAGE_KEYS.settings, {})
     };
     state.players = state.players.map((player) => ({
         ...player,
         emoji: player.emoji || DEFAULT_PLAYER_EMOJI
     }));
+    localStorage.removeItem("scorekeeper.gameNames.v1");
 }
 
 function normalizeName(name) {
@@ -162,6 +172,28 @@ function normalizeName(name) {
 
 function playerSort(a, b) {
     return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+}
+
+function gameNameSort(a, b) {
+    return a.localeCompare(b, undefined, { sensitivity: "base" });
+}
+
+function getSeenGameNames() {
+    const names = new Map();
+
+    state.history.forEach((game) => {
+        const name = normalizeName(game?.name);
+        if (name) {
+            names.set(name.toLocaleLowerCase(), name);
+        }
+    });
+
+    const selectedName = normalizeName(state.draft.selectedGameName);
+    if (selectedName) {
+        names.set(selectedName.toLocaleLowerCase(), selectedName);
+    }
+
+    return [...names.values()].sort(gameNameSort);
 }
 
 function getPlayerById(playerId) {
@@ -181,6 +213,38 @@ function getPlayerEmoji(playerId) {
 function getExistingPlayerByNormalizedName(name) {
     const normalized = normalizeName(name).toLocaleLowerCase();
     return state.players.find((player) => normalizeName(player.name).toLocaleLowerCase() === normalized) || null;
+}
+
+function getPlayerStats(playerId) {
+    const stats = {
+        gamesPlayed: 0,
+        wins: 0,
+        mostWonGame: ""
+    };
+    const winsByGame = new Map();
+
+    state.history.forEach((game) => {
+        if (!Array.isArray(game.playerIds) || !game.playerIds.includes(playerId)) {
+            return;
+        }
+        stats.gamesPlayed += 1;
+
+        if (!Array.isArray(game.winners) || !game.winners.includes(playerId)) {
+            return;
+        }
+        stats.wins += 1;
+
+        const gameName = normalizeName(game.name);
+        if (gameName) {
+            winsByGame.set(gameName, (winsByGame.get(gameName) || 0) + 1);
+        }
+    });
+
+    const [mostWonGame] = [...winsByGame.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], undefined, { sensitivity: "base" }))[0] || [];
+    stats.mostWonGame = mostWonGame || "";
+
+    return stats;
 }
 
 function createPlayer(name, emoji = DEFAULT_PLAYER_EMOJI) {
@@ -203,10 +267,6 @@ function ensurePlayer(name, emoji = DEFAULT_PLAYER_EMOJI) {
         return null;
     }
     return getExistingPlayerByNormalizedName(normalized) || createPlayer(normalized, emoji);
-}
-
-function defaultGameName() {
-    return `Game ${new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
 }
 
 function activeGamePlayers() {
@@ -234,6 +294,7 @@ function activeGamePlayers() {
 
 function startGame(gameName, playerIds) {
     const now = new Date().toISOString();
+    const normalizedGameName = normalizeName(gameName);
     const scores = {};
     playerIds.forEach((playerId) => {
         scores[playerId] = 0;
@@ -241,7 +302,7 @@ function startGame(gameName, playerIds) {
 
     state.activeGame = {
         id: uid("game"),
-        name: normalizeName(gameName) || defaultGameName(),
+        name: normalizedGameName,
         createdAt: now,
         startedAt: now,
         completedAt: null,
@@ -281,6 +342,15 @@ function removeSelectedPlayer(playerId) {
 
 function addPlayerFromInput() {
     submitPlayerForm();
+}
+
+function setActiveTab(tabName, shouldPersist = true) {
+    const nextTab = ["games", "players", "history", "other"].includes(tabName) ? tabName : "games";
+    state.settings.activeTab = nextTab;
+    if (shouldPersist) {
+        persist();
+    }
+    renderTabs();
 }
 
 function setScore(playerId, amount) {
@@ -379,6 +449,7 @@ function finishGame() {
     };
     state.history.unshift(summary);
     state.activeGame = null;
+    state.settings.activeTab = "history";
     persist();
     render();
     showMessage(`Saved "${summary.name}" to history.`);
@@ -462,7 +533,7 @@ function exportData() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `scorekeeper-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `meeplekeeper-backup-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
 }
@@ -480,9 +551,12 @@ function importData(file) {
             state.history = data.history;
             state.settings = {
                 showArchivedPlayers: false,
+                currentGameSort: "alpha",
+                activeTab: "games",
                 ...(data.settings || {})
             };
             state.draft.selectedPlayerIds = [];
+            state.draft.selectedGameName = "";
             persist();
             render();
         } catch (error) {
@@ -500,14 +574,16 @@ function clearAllData() {
         return;
     }
     localStorage.removeItem(STORAGE_KEYS.players);
+    localStorage.removeItem("scorekeeper.gameNames.v1");
     localStorage.removeItem(STORAGE_KEYS.activeGame);
     localStorage.removeItem(STORAGE_KEYS.history);
     localStorage.removeItem(STORAGE_KEYS.settings);
     state.players = [];
     state.activeGame = null;
     state.history = [];
-    state.settings = { showArchivedPlayers: false };
+    state.settings = { showArchivedPlayers: false, currentGameSort: "alpha", activeTab: "games" };
     state.draft.selectedPlayerIds = [];
+    state.draft.selectedGameName = "";
     render();
 }
 
@@ -551,6 +627,32 @@ function openPlayerDialog(playerId = null) {
 function closePlayerDialog() {
     state.editingPlayerId = null;
     el.playerDialog.close();
+}
+
+function openGameNameDialog() {
+    el.newGameNameInput.value = "";
+    if (typeof el.gameNameDialog.showModal === "function") {
+        el.gameNameDialog.showModal();
+        window.requestAnimationFrame(() => {
+            el.newGameNameInput.focus({ preventScroll: true });
+        });
+    }
+}
+
+function closeGameNameDialog() {
+    el.gameNameDialog.close();
+    renderGameNameSelect();
+}
+
+function submitGameNameForm() {
+    const gameName = normalizeName(el.newGameNameInput.value);
+    if (!gameName) {
+        el.newGameNameInput.focus();
+        return;
+    }
+    state.draft.selectedGameName = gameName;
+    closeGameNameDialog();
+    renderNewGame();
 }
 
 function submitPlayerForm() {
@@ -656,6 +758,12 @@ function formatDate(iso) {
     });
 }
 
+function formatDateOnly(iso) {
+    return new Date(iso).toLocaleDateString([], {
+        dateStyle: "medium"
+    });
+}
+
 function formatPlayerLabel(player) {
     return `<span class="player-name-inline"><span class="player-emoji">${player.emoji || DEFAULT_PLAYER_EMOJI}</span><span>${player.name}</span></span>`;
 }
@@ -707,9 +815,37 @@ function renderSuggestions() {
     });
 }
 
+function renderGameNameSelect() {
+    const selectedName = normalizeName(state.draft.selectedGameName);
+    const gameNames = getSeenGameNames();
+
+    el.gameNameSelect.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = gameNames.length ? "Choose a game name" : "Add a game name";
+    placeholder.disabled = Boolean(selectedName);
+    el.gameNameSelect.appendChild(placeholder);
+
+    gameNames.forEach((gameName) => {
+        const option = document.createElement("option");
+        option.value = gameName;
+        option.textContent = gameName;
+        el.gameNameSelect.appendChild(option);
+    });
+
+    const addOption = document.createElement("option");
+    addOption.value = ADD_GAME_NAME_VALUE;
+    addOption.textContent = "Add new game name...";
+    el.gameNameSelect.appendChild(addOption);
+
+    el.gameNameSelect.value = selectedName;
+}
+
 function renderNewGame() {
     const selectedIds = state.draft.selectedPlayerIds;
     const visiblePlayers = state.players.filter((player) => state.settings.showArchivedPlayers || !player.archived);
+    renderGameNameSelect();
     el.savedPlayers.innerHTML = "";
     if (!visiblePlayers.length) {
         el.savedPlayers.className = "player-list empty-state-inline";
@@ -867,14 +1003,27 @@ function renderDirectory() {
 
     el.directoryList.className = "directory-list";
     [...state.players].sort(playerSort).forEach((player) => {
+        const stats = getPlayerStats(player.id);
         const row = document.createElement("div");
         row.className = "directory-row";
 
         const info = document.createElement("div");
+        info.className = "directory-info";
         info.innerHTML = `
             <strong>${formatPlayerLabel(player)}</strong>
-            <p class="muted">Added ${formatDate(player.createdAt)}${player.archived ? " • archived" : ""}</p>
         `;
+
+        [
+            `Added ${formatDateOnly(player.createdAt)}${player.archived ? " • archived" : ""}`,
+            `Games Played: ${stats.gamesPlayed}`,
+            `Wins: ${stats.wins}`,
+            ...(stats.wins > 0 ? [`Most won game: ${stats.mostWonGame}`] : [])
+        ].forEach((line) => {
+            const meta = document.createElement("p");
+            meta.className = "muted";
+            meta.textContent = line;
+            info.appendChild(meta);
+        });
 
         const actions = document.createElement("div");
         actions.className = "directory-actions";
@@ -899,25 +1048,48 @@ function renderDirectory() {
 
 function render() {
     document.body.classList.toggle("game-active", Boolean(state.activeGame));
+    renderTabs();
     renderNewGame();
     renderActiveGame();
     renderHistory();
     renderDirectory();
 }
 
+function renderTabs() {
+    const activeTab = ["games", "players", "history", "other"].includes(state.settings.activeTab) ? state.settings.activeTab : "games";
+    state.settings.activeTab = activeTab;
+
+    el.tabButtons.forEach((button) => {
+        const isActive = button.dataset.tab === activeTab;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+        button.tabIndex = isActive ? 0 : -1;
+    });
+
+    el.tabPanels.forEach((panel) => {
+        panel.hidden = panel.id !== `${activeTab}-tab`;
+    });
+}
+
 function handleStartGame(event) {
     event.preventDefault();
+    const gameName = normalizeName(state.draft.selectedGameName);
     if (state.activeGame) {
         window.alert("Finish or abandon the active game before starting another.");
+        return;
+    }
+    if (!gameName) {
+        window.alert("Pick a game name to start a game.");
+        el.gameNameSelect.focus();
         return;
     }
     if (state.draft.selectedPlayerIds.length < 2) {
         window.alert("Pick at least two players to start a game.");
         return;
     }
-    startGame(el.gameNameInput.value, state.draft.selectedPlayerIds);
+    startGame(gameName, state.draft.selectedPlayerIds);
     state.draft.selectedPlayerIds = [];
-    el.gameNameInput.value = "";
+    state.draft.selectedGameName = "";
     el.playerNameInput.value = "";
     render();
     document.getElementById("current-game-heading").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -926,6 +1098,18 @@ function handleStartGame(event) {
 function bindEvents() {
     el.openPlayerDialogBtn.addEventListener("click", () => openPlayerDialog());
     el.newGameForm.addEventListener("submit", handleStartGame);
+    el.tabButtons.forEach((button) => {
+        button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+    });
+    el.gameNameSelect.addEventListener("change", () => {
+        if (el.gameNameSelect.value === ADD_GAME_NAME_VALUE) {
+            renderGameNameSelect();
+            openGameNameDialog();
+            return;
+        }
+        state.draft.selectedGameName = normalizeName(el.gameNameSelect.value);
+        renderGameNameSelect();
+    });
     el.toggleArchivedBtn.addEventListener("click", () => {
         state.settings.showArchivedPlayers = !state.settings.showArchivedPlayers;
         persist();
@@ -952,14 +1136,17 @@ function bindEvents() {
         }
     });
     el.clearDataBtn.addEventListener("click", clearAllData);
-    el.newGameNavBtn.addEventListener("click", () => {
-        document.getElementById("new-game-heading").scrollIntoView({ behavior: "smooth", block: "start" });
-    });
     el.resumeGameBtn.addEventListener("click", () => {
+        setActiveTab("games");
         document.getElementById("current-game-heading").scrollIntoView({ behavior: "smooth", block: "start" });
     });
     el.scoreCancelBtn.addEventListener("click", closeScoreDialog);
     el.playerCancelBtn.addEventListener("click", closePlayerDialog);
+    el.gameNameCancelBtn.addEventListener("click", closeGameNameDialog);
+    el.gameNameForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitGameNameForm();
+    });
     el.playerForm.addEventListener("submit", (event) => {
         event.preventDefault();
         submitPlayerForm();

@@ -38,7 +38,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
     font-size: 16px;
 }
@@ -115,6 +116,43 @@ h3 {
     border: 1px solid rgba(20, 83, 45, 0.14);
 }
 
+.tab-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 14px;
+    background: rgba(255, 250, 241, 0.72);
+    box-shadow: var(--shadow);
+}
+
+.tab-button {
+    min-width: 0;
+    min-height: 42px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.tab-button.is-active {
+    background: var(--primary);
+    color: #f7f8f0;
+    box-shadow: 0 8px 16px rgba(20, 83, 45, 0.14);
+}
+
+.tab-button:focus-visible {
+    outline: 2px solid rgba(20, 83, 45, 0.25);
+    outline-offset: 2px;
+}
+
+.tab-panel[hidden] {
+    display: none;
+}
+
 .layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -137,10 +175,7 @@ h3 {
 }
 
 body.game-active .hero,
-body.game-active #new-game-panel,
-body.game-active #history-panel,
-body.game-active #players-panel,
-body.game-active #backup-panel {
+body.game-active #new-game-panel {
     display: none;
 }
 
@@ -240,7 +275,8 @@ body.game-active .panel-side {
     gap: 8px;
 }
 
-.field input {
+.field input,
+.field select {
     width: 100%;
     border: 1px solid var(--line);
     background: var(--surface-strong);
@@ -249,7 +285,8 @@ body.game-active .panel-side {
     color: var(--text);
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
     outline: 2px solid rgba(20, 83, 45, 0.18);
     border-color: var(--primary);
 }
@@ -391,6 +428,21 @@ body.game-active .panel-side {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.directory-info {
+    display: grid;
+    gap: 3px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.directory-actions {
+    flex: 0 0 auto;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    margin-left: auto;
 }
 
 .score-grid {

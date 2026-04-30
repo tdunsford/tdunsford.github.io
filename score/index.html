@@ -3,135 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Scorekeeper</title>
+    <title>MeepleKeeper</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Scorekeeper">
+    <meta name="apple-mobile-web-app-title" content="MeepleKeeper">
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260419-1">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20260419-1">
-    <link rel="stylesheet" href="styles.css?v=20260419-1">
+    <link rel="stylesheet" href="styles.css?v=20260430-2">
 </head>
 <body>
     <div class="app-shell">
         <header id="hero-section" class="hero">
             <div>
                 <p class="eyebrow">Offline scorekeeping</p>
-                <h1>Scorekeeper</h1>
+                <h1>MeepleKeeper</h1>
                 <p class="hero-copy">Track players, run games, and keep the full record in local storage.</p>
             </div>
             <div class="hero-actions">
-                <button id="new-game-nav-btn" class="button button-primary" type="button">New Game</button>
                 <button id="resume-game-btn" class="button button-secondary" type="button" hidden>Resume Active Game</button>
             </div>
         </header>
 
         <div id="app-message" class="app-message" hidden></div>
 
-        <main class="layout">
-            <section id="new-game-panel" class="panel panel-main" aria-labelledby="new-game-heading">
-                <div class="panel-heading">
-                    <div>
-                        <h2 id="new-game-heading">New Game</h2>
-                    </div>
-                </div>
+        <nav class="tab-nav" role="tablist" aria-label="MeepleKeeper sections">
+            <button id="games-tab-btn" class="tab-button is-active" type="button" role="tab" aria-selected="true" aria-controls="games-tab" data-tab="games">Games</button>
+            <button id="players-tab-btn" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="players-tab" data-tab="players">Players</button>
+            <button id="history-tab-btn" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="history-tab" data-tab="history">History</button>
+            <button id="other-tab-btn" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="other-tab" data-tab="other">Other</button>
+        </nav>
 
-                <form id="new-game-form" class="stack-lg">
-                    <label class="field">
-                        <span>Game name</span>
-                        <input id="game-name-input" name="gameName" type="text" maxlength="80" placeholder="Friday cards, Trivia night, Dice game...">
-                    </label>
-
-                    <div class="field">
-                        <div class="field-label-row">
-                            <span>Add players</span>
-                            <span class="field-hint">Create a player or pick existing players</span>
+        <section id="games-tab" class="tab-panel" role="tabpanel" aria-labelledby="games-tab-btn">
+            <main class="layout">
+                <section id="new-game-panel" class="panel panel-main" aria-labelledby="new-game-heading">
+                    <div class="panel-heading">
+                        <div>
+                            <h2 id="new-game-heading">New Game</h2>
                         </div>
-                        <div class="player-adder">
-                            <button id="open-player-dialog-btn" class="button button-secondary" type="button">Add Player</button>
+                    </div>
+
+                    <form id="new-game-form" class="stack-lg">
+                        <label class="field">
+                            <span>Game name</span>
+                            <select id="game-name-select" name="gameName" required>
+                                <option value="">Choose a game name</option>
+                            </select>
+                        </label>
+
+                        <div class="field">
+                            <div class="field-label-row">
+                                <span>Add players</span>
+                                <span class="field-hint">Create a player or pick existing players</span>
+                            </div>
+                            <div class="player-adder">
+                                <button id="open-player-dialog-btn" class="button button-secondary" type="button">Add Player</button>
+                            </div>
+                            <datalist id="player-suggestions"></datalist>
                         </div>
-                        <datalist id="player-suggestions"></datalist>
-                    </div>
 
-                    <div class="subsection">
-                        <div class="subsection-heading">
-                            <h3>Saved Players</h3>
-                            <button id="toggle-archived-btn" class="button button-ghost" type="button">Show Archived</button>
+                        <div class="subsection">
+                            <div class="subsection-heading">
+                                <h3>Saved Players</h3>
+                                <button id="toggle-archived-btn" class="button button-ghost" type="button">Show Archived</button>
+                            </div>
+                            <div id="saved-players" class="player-list empty-state-inline"></div>
                         </div>
-                        <div id="saved-players" class="player-list empty-state-inline"></div>
-                    </div>
 
-                    <div class="form-actions">
-                        <button id="start-game-btn" class="button button-primary button-wide" type="submit">Start Game</button>
-                    </div>
-                </form>
-            </section>
-
-            <section class="panel panel-side" aria-labelledby="current-game-heading">
-                <div class="panel-heading">
-                    <div>
-                        <h2 id="current-game-heading">Current Game</h2>
-                    </div>
-                    <div id="sort-controls" class="sort-controls" hidden>
-                        <button id="sort-alpha-btn" class="button button-secondary sort-button is-active" type="button">A-Z</button>
-                        <button id="sort-score-btn" class="button button-ghost sort-button" type="button">Score</button>
-                    </div>
-                </div>
-
-                <div id="active-game-empty" class="empty-panel">
-                    <p>No game in progress.</p>
-                    <p class="muted">Start a game to track scores and keep a full timeline for undo and review.</p>
-                </div>
-
-                <section id="active-game-panel" class="stack-lg" hidden>
-                    <div id="active-players" class="score-grid"></div>
-
-                    <div class="game-summary-actions">
-                        <button id="finish-game-btn" class="button button-primary" type="button">Finish Game</button>
-                        <button id="abandon-game-btn" class="button button-ghost" type="button">Abandon</button>
-                    </div>
-
-                    <div class="subsection">
-                        <div class="subsection-heading">
-                            <h3>Scoring Timeline</h3>
-                            <button id="undo-last-btn" class="button button-secondary" type="button">Undo Last</button>
+                        <div class="form-actions">
+                            <button id="start-game-btn" class="button button-primary button-wide" type="submit">Start Game</button>
                         </div>
-                        <div id="event-log" class="timeline empty-state-inline"></div>
-                    </div>
+                    </form>
                 </section>
+
+                <section class="panel panel-side" aria-labelledby="current-game-heading">
+                    <div class="panel-heading">
+                        <div>
+                            <h2 id="current-game-heading">Current Game</h2>
+                        </div>
+                        <div id="sort-controls" class="sort-controls" hidden>
+                            <button id="sort-alpha-btn" class="button button-secondary sort-button is-active" type="button">A-Z</button>
+                            <button id="sort-score-btn" class="button button-ghost sort-button" type="button">Score</button>
+                        </div>
+                    </div>
+
+                    <div id="active-game-empty" class="empty-panel">
+                        <p>No game in progress.</p>
+                        <p class="muted">Start a game to track scores and keep a full timeline for undo and review.</p>
+                    </div>
+
+                    <section id="active-game-panel" class="stack-lg" hidden>
+                        <div id="active-players" class="score-grid"></div>
+
+                        <div class="game-summary-actions">
+                            <button id="finish-game-btn" class="button button-primary" type="button">Finish Game</button>
+                            <button id="abandon-game-btn" class="button button-ghost" type="button">Abandon</button>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-heading">
+                                <h3>Scoring Timeline</h3>
+                                <button id="undo-last-btn" class="button button-secondary" type="button">Undo Last</button>
+                            </div>
+                            <div id="event-log" class="timeline empty-state-inline"></div>
+                        </div>
+                    </section>
+                </section>
+            </main>
+        </section>
+
+        <section id="players-tab" class="tab-panel" role="tabpanel" aria-labelledby="players-tab-btn" hidden>
+            <section id="players-panel" class="panel panel-full" aria-labelledby="players-heading">
+                <div class="panel-heading">
+                    <div>
+                        <h2 id="players-heading">Players</h2>
+                    </div>
+                </div>
+                <div id="directory-list" class="directory-list empty-state-inline"></div>
             </section>
-        </main>
-
-        <section id="history-panel" class="panel panel-full" aria-labelledby="history-heading">
-            <div class="panel-heading">
-                <div>
-                    <h2 id="history-heading">History</h2>
-                </div>
-                <span id="history-count" class="pill">0 games</span>
-            </div>
-            <div id="history-list" class="history-list empty-state-inline"></div>
         </section>
 
-        <section id="players-panel" class="panel panel-full" aria-labelledby="players-heading">
-            <div class="panel-heading">
-                <div>
-                    <h2 id="players-heading">Players</h2>
+        <section id="history-tab" class="tab-panel" role="tabpanel" aria-labelledby="history-tab-btn" hidden>
+            <section id="history-panel" class="panel panel-full" aria-labelledby="history-heading">
+                <div class="panel-heading">
+                    <div>
+                        <h2 id="history-heading">History</h2>
+                    </div>
+                    <span id="history-count" class="pill">0 games</span>
                 </div>
-            </div>
-            <div id="directory-list" class="directory-list empty-state-inline"></div>
+                <div id="history-list" class="history-list empty-state-inline"></div>
+            </section>
         </section>
 
-        <section id="backup-panel" class="panel panel-full" aria-labelledby="backup-heading">
-            <div class="panel-heading">
-                <div>
-                    <h2 id="backup-heading">Local Data Tools</h2>
+        <section id="other-tab" class="tab-panel" role="tabpanel" aria-labelledby="other-tab-btn" hidden>
+            <section id="backup-panel" class="panel panel-full" aria-labelledby="backup-heading">
+                <div class="panel-heading">
+                    <div>
+                        <h2 id="backup-heading">Local Data Tools</h2>
+                    </div>
                 </div>
-            </div>
-            <div class="backup-actions">
-                <button id="export-btn" class="button button-secondary" type="button">Export JSON</button>
-                <label class="button button-secondary file-button" for="import-input">Import JSON</label>
-                <input id="import-input" type="file" accept="application/json" hidden>
-                <button id="clear-data-btn" class="button button-danger" type="button">Clear All Data</button>
-            </div>
-            <p class="muted">Everything stays on this device unless you explicitly export it.</p>
+                <div class="backup-actions">
+                    <button id="export-btn" class="button button-secondary" type="button">Export JSON</button>
+                    <label class="button button-secondary file-button" for="import-input">Import JSON</label>
+                    <input id="import-input" type="file" accept="application/json" hidden>
+                    <button id="clear-data-btn" class="button button-danger" type="button">Clear All Data</button>
+                </div>
+                <p class="muted">Everything stays on this device unless you explicitly export it.</p>
+            </section>
         </section>
     </div>
 
@@ -184,6 +200,25 @@
         </form>
     </dialog>
 
+    <dialog id="game-name-dialog" class="score-dialog">
+        <form id="game-name-form" method="dialog" class="stack-lg">
+            <div>
+                <p class="section-kicker">Game</p>
+                <h2>Add Game Name</h2>
+            </div>
+
+            <label class="field">
+                <span>Name</span>
+                <input id="new-game-name-input" name="newGameName" type="text" maxlength="80" placeholder="Friday cards, Trivia night, Dice game..." required>
+            </label>
+
+            <menu class="dialog-actions">
+                <button id="game-name-cancel-btn" class="button button-ghost" type="button">Cancel</button>
+                <button id="game-name-save-btn" class="button button-primary" type="submit">Save</button>
+            </menu>
+        </form>
+    </dialog>
+
     <template id="history-item-template">
         <article class="history-card">
             <div class="history-card-top">
@@ -196,6 +231,6 @@
         </article>
     </template>
 
-    <script src="script.js?v=20260419-1"></script>
+    <script src="script.js?v=20260430-2"></script>
 </body>
 </html>
