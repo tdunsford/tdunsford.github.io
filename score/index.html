@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-title" content="MeepleKeeper">
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260419-1">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20260419-1">
-    <link rel="stylesheet" href="styles.css?v=20260430-2">
+    <link rel="stylesheet" href="styles.css?v=20260430-3">
 </head>
 <body>
     <div class="app-shell">
@@ -159,19 +159,31 @@
                 <p id="score-dialog-current" class="muted"></p>
             </div>
 
-            <div class="mode-toggle" id="score-mode-toggle" role="group" aria-label="Score mode">
-                <button id="score-mode-add" class="button button-primary mode-button is-active" type="button" data-mode="add">Add</button>
-                <button id="score-mode-subtract" class="button button-ghost mode-button" type="button" data-mode="subtract">Subtract</button>
+            <div class="score-calculator-display" aria-live="polite">
+                <span class="score-calculator-label">Total</span>
+                <strong id="score-calculator-total">0</strong>
+                <span id="score-calculator-entry" class="score-calculator-entry">Entry: 0</span>
             </div>
 
-            <label class="field">
-                <span id="score-amount-label">Points</span>
-                <input id="score-amount-input" name="scoreAmount" type="number" inputmode="numeric" step="1" enterkeyhint="done" required autofocus>
-            </label>
+            <div id="score-keypad" class="score-keypad" aria-label="Score keypad">
+                <button class="button button-secondary score-key" type="button" data-score-key="7">7</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="8">8</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="9">9</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="4">4</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="5">5</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="6">6</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="1">1</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="2">2</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="3">3</button>
+                <button class="button button-ghost score-key" type="button" data-score-key="sign">+/-</button>
+                <button class="button button-secondary score-key" type="button" data-score-key="0">0</button>
+                <button class="button button-ghost score-key" type="button" data-score-key="clear">C</button>
+                <button class="button button-ghost score-key" type="button" data-score-key="plus">+</button>
+                <button id="score-save-btn" class="button button-primary score-key score-key-enter" type="submit">Enter</button>
+            </div>
 
             <menu class="dialog-actions">
                 <button id="score-cancel-btn" class="button button-ghost" type="button">Cancel</button>
-                <button id="score-save-btn" class="button button-primary" type="submit">Apply</button>
             </menu>
         </form>
     </dialog>
@@ -231,6 +243,6 @@
         </article>
     </template>
 
-    <script src="script.js?v=20260430-2"></script>
+    <script src="script.js?v=20260430-3"></script>
 </body>
 </html>

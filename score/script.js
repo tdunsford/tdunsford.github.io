@@ -67,7 +67,11 @@ const state = {
     },
     scoreDialogPlayerId: null,
     editingPlayerId: null,
-    scoreMode: "add",
+    scoreCalculator: {
+        pendingTotal: 0,
+        currentDigits: "",
+        currentSign: 1
+    },
     highlightedPlayerId: null,
     highlightedScoreAmount: null
 };
@@ -112,11 +116,9 @@ const el = {
     scoreForm: document.getElementById("score-form"),
     scoreDialogTitle: document.getElementById("score-dialog-title"),
     scoreDialogCurrent: document.getElementById("score-dialog-current"),
-    scoreAmountLabel: document.getElementById("score-amount-label"),
-    scoreModeToggle: document.getElementById("score-mode-toggle"),
-    scoreModeAdd: document.getElementById("score-mode-add"),
-    scoreModeSubtract: document.getElementById("score-mode-subtract"),
-    scoreAmountInput: document.getElementById("score-amount-input"),
+    scoreCalculatorTotal: document.getElementById("score-calculator-total"),
+    scoreCalculatorEntry: document.getElementById("score-calculator-entry"),
+    scoreKeypad: document.getElementById("score-keypad"),
     scoreCancelBtn: document.getElementById("score-cancel-btn"),
     playerDialog: document.getElementById("player-dialog"),
     playerForm: document.getElementById("player-form"),
@@ -361,16 +363,15 @@ function setScore(playerId, amount) {
     if (!Number.isFinite(numericAmount) || numericAmount === 0) {
         return;
     }
-    const signedAmount = state.scoreMode === "subtract" ? -Math.abs(numericAmount) : Math.abs(numericAmount);
-    state.activeGame.scores[playerId] = (state.activeGame.scores[playerId] || 0) + signedAmount;
+    state.activeGame.scores[playerId] = (state.activeGame.scores[playerId] || 0) + numericAmount;
     state.activeGame.events.unshift({
         id: uid("event"),
         playerId,
-        amount: signedAmount,
+        amount: numericAmount,
         timestamp: new Date().toISOString()
     });
     persist();
-    highlightPlayerCard(playerId, signedAmount);
+    highlightPlayerCard(playerId, numericAmount);
 }
 
 function highlightPlayerCard(playerId, amount) {
@@ -593,18 +594,18 @@ function openScoreDialog(playerId) {
         return;
     }
     state.scoreDialogPlayerId = playerId;
-    setScoreMode("add");
+    resetScoreCalculator();
     el.scoreDialogTitle.textContent = `Adjust ${player.name}`;
     el.scoreDialogCurrent.textContent = `Current score: ${state.activeGame.scores[playerId] || 0}`;
-    el.scoreAmountInput.value = "";
+    renderScoreCalculator();
     if (typeof el.scoreDialog.showModal === "function") {
         el.scoreDialog.showModal();
-        focusScoreAmountInput();
     }
 }
 
 function closeScoreDialog() {
     state.scoreDialogPlayerId = null;
+    resetScoreCalculator();
     el.scoreDialog.close();
 }
 
@@ -699,20 +700,6 @@ function submitPlayerForm() {
     closePlayerDialog();
 }
 
-function setScoreMode(mode) {
-    state.scoreMode = mode === "subtract" ? "subtract" : "add";
-    el.scoreDialog.dataset.mode = state.scoreMode;
-    el.scoreAmountLabel.textContent = state.scoreMode === "subtract" ? "Points to subtract" : "Points to add";
-    el.scoreModeAdd.classList.toggle("is-active", state.scoreMode === "add");
-    el.scoreModeAdd.classList.toggle("button-primary", state.scoreMode === "add");
-    el.scoreModeAdd.classList.toggle("button-ghost", state.scoreMode !== "add");
-    el.scoreModeSubtract.classList.toggle("is-active", state.scoreMode === "subtract");
-    el.scoreModeSubtract.classList.toggle("button-primary", state.scoreMode === "subtract");
-    el.scoreModeSubtract.classList.toggle("button-ghost", state.scoreMode !== "subtract");
-    el.scoreModeAdd.setAttribute("aria-pressed", String(state.scoreMode === "add"));
-    el.scoreModeSubtract.setAttribute("aria-pressed", String(state.scoreMode === "subtract"));
-}
-
 function showMessage(text) {
     el.appMessage.textContent = text;
     el.appMessage.hidden = false;
@@ -728,27 +715,84 @@ function showMessage(text) {
     }, 3500);
 }
 
-function focusScoreAmountInput() {
-    const focusNow = () => {
-        try {
-            el.scoreAmountInput.focus({ preventScroll: true });
-        } catch {
-            el.scoreAmountInput.focus();
-        }
-        el.scoreAmountInput.select();
-    };
-
-    window.requestAnimationFrame(focusNow);
-    window.setTimeout(focusNow, 60);
-    window.setTimeout(focusNow, 180);
-}
-
 function submitScoreForm() {
     if (!state.scoreDialogPlayerId) {
         return;
     }
-    setScore(state.scoreDialogPlayerId, el.scoreAmountInput.value);
+    const amount = commitScoreCalculatorEntry();
+    if (amount === 0) {
+        renderScoreCalculator();
+        return;
+    }
+    setScore(state.scoreDialogPlayerId, amount);
     closeScoreDialog();
+}
+
+function resetScoreCalculator() {
+    state.scoreCalculator.pendingTotal = 0;
+    state.scoreCalculator.currentDigits = "";
+    state.scoreCalculator.currentSign = 1;
+}
+
+function getScoreCalculatorCurrentValue() {
+    if (!state.scoreCalculator.currentDigits) {
+        return 0;
+    }
+    return Number.parseInt(state.scoreCalculator.currentDigits, 10) * state.scoreCalculator.currentSign;
+}
+
+function getScoreCalculatorDisplayTotal() {
+    return state.scoreCalculator.pendingTotal + getScoreCalculatorCurrentValue();
+}
+
+function renderScoreCalculator() {
+    el.scoreCalculatorTotal.textContent = String(getScoreCalculatorDisplayTotal());
+    el.scoreCalculatorEntry.textContent = `Entry: ${getScoreCalculatorCurrentValue()}`;
+}
+
+function commitScoreCalculatorEntry() {
+    state.scoreCalculator.pendingTotal += getScoreCalculatorCurrentValue();
+    state.scoreCalculator.currentDigits = "";
+    state.scoreCalculator.currentSign = 1;
+    return state.scoreCalculator.pendingTotal;
+}
+
+function appendScoreCalculatorDigit(digit) {
+    if (state.scoreCalculator.currentDigits === "0") {
+        state.scoreCalculator.currentDigits = digit;
+    } else {
+        state.scoreCalculator.currentDigits += digit;
+    }
+    renderScoreCalculator();
+}
+
+function toggleScoreCalculatorSign() {
+    if (state.scoreCalculator.currentDigits) {
+        state.scoreCalculator.currentSign *= -1;
+    } else {
+        state.scoreCalculator.pendingTotal *= -1;
+    }
+    renderScoreCalculator();
+}
+
+function handleScoreKey(key) {
+    if (/^\d$/.test(key)) {
+        appendScoreCalculatorDigit(key);
+        return;
+    }
+    if (key === "plus") {
+        commitScoreCalculatorEntry();
+        renderScoreCalculator();
+        return;
+    }
+    if (key === "sign") {
+        toggleScoreCalculatorSign();
+        return;
+    }
+    if (key === "clear") {
+        resetScoreCalculator();
+        renderScoreCalculator();
+    }
 }
 
 function formatDate(iso) {
@@ -1151,24 +1195,42 @@ function bindEvents() {
         event.preventDefault();
         submitPlayerForm();
     });
-    el.scoreModeToggle.addEventListener("click", (event) => {
-        const button = event.target.closest(".mode-button");
+    el.scoreKeypad.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-score-key]");
         if (!button) {
             return;
         }
-        event.preventDefault();
-        setScoreMode(button.dataset.mode);
+        handleScoreKey(button.dataset.scoreKey);
     });
     el.scoreForm.addEventListener("submit", (event) => {
         event.preventDefault();
         submitScoreForm();
     });
-    el.scoreAmountInput.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter") {
+    el.scoreDialog.addEventListener("keydown", (event) => {
+        if (/^\d$/.test(event.key)) {
+            event.preventDefault();
+            handleScoreKey(event.key);
             return;
         }
-        event.preventDefault();
-        submitScoreForm();
+        if (event.key === "+") {
+            event.preventDefault();
+            handleScoreKey("plus");
+            return;
+        }
+        if (event.key === "-") {
+            event.preventDefault();
+            handleScoreKey("sign");
+            return;
+        }
+        if (event.key === "Backspace" || event.key.toLocaleLowerCase() === "c") {
+            event.preventDefault();
+            handleScoreKey("clear");
+            return;
+        }
+        if (event.key === "Enter") {
+            event.preventDefault();
+            submitScoreForm();
+        }
     });
 }
 

@@ -705,20 +705,50 @@ body.game-active .panel-side {
     padding: 22px;
 }
 
-.mode-toggle {
-    display: inline-flex;
+.score-calculator-display {
+    display: grid;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface-strong);
+    text-align: right;
+}
+
+.score-calculator-label {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#score-calculator-total {
+    font-size: 2.35rem;
+    line-height: 1;
+}
+
+.score-calculator-entry {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.score-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
 }
 
-.mode-button {
-    min-width: 96px;
+.score-key {
+    min-width: 0;
+    min-height: 54px;
+    padding: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
 }
 
-.mode-button.is-active {
-    background: var(--primary);
-    color: #f7f8f0;
-    border: 0;
-    box-shadow: 0 10px 20px rgba(20, 83, 45, 0.16);
+.score-key-enter {
+    grid-column: span 2;
 }
 
 .dialog-actions {
