@@ -245,13 +245,19 @@ select {
 }
 
 .chip {
+  border: 0;
   border-radius: 999px;
   background: #e8eeeb;
   color: var(--text);
   padding: 5px 9px;
+  min-height: 32px;
   font-size: 0.78rem;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+.chip-button {
+  cursor: pointer;
 }
 
 .item-actions {

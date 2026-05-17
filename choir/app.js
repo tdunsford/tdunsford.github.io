@@ -157,7 +157,6 @@ function renderDashboard() {
             <h3>${escapeHtml(memberName(book.currentMemberId))}</h3>
             <p class="meta">Book ${escapeHtml(book.qr)}</p>
           </div>
-          <button class="secondary" type="button" data-return="${escapeAttr(book.qr)}">Return</button>
         </div>
       </article>
     `).join("")
@@ -189,7 +188,7 @@ function renderMembers() {
             </div>
           </div>
           <div class="chips">
-            ${books.length ? books.map((book) => `<span class="chip">${escapeHtml(shortQr(book.qr))}</span>`).join("") : `<span class="chip">No books assigned</span>`}
+            ${books.length ? books.map((book) => `<button class="chip chip-button" type="button" data-member-return="${escapeAttr(book.qr)}">${escapeHtml(shortQr(book.qr))}</button>`).join("") : `<span class="chip">No books assigned</span>`}
           </div>
           ${history.length ? `
             <div class="history">
@@ -563,12 +562,13 @@ function bindEvents() {
     const editId = event.target.dataset.editMember;
     const toggleId = event.target.dataset.toggleMember;
     const deleteId = event.target.dataset.deleteMember;
+    const returnQr = event.target.dataset.memberReturn;
     if (editId) editMember(editId);
     if (toggleId) await toggleMember(toggleId);
     if (deleteId) await deleteMember(deleteId);
-  });
-  $("assignedList").addEventListener("click", async (event) => {
-    if (event.target.dataset.return) await returnBook(event.target.dataset.return);
+    if (returnQr && confirm(`Mark ${shortQr(returnQr)} as returned?`)) {
+      await returnBook(returnQr);
+    }
   });
   $("startScanButton").addEventListener("click", startScanner);
   $("stopScanButton").addEventListener("click", stopScanner);
