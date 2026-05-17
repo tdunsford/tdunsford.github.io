@@ -10,8 +10,13 @@ const state = {
   stream: null,
   detector: null,
   scanTimer: null,
+  scanBusy: false,
+  scanMethod: "",
+  qrCanvas: document.createElement("canvas"),
+  qrContext: null,
   lastScan: { value: "", at: 0 },
 };
+state.qrContext = state.qrCanvas.getContext("2d", { willReadFrequently: true });
 
 let db;
 
@@ -362,12 +367,22 @@ function addLog(message) {
 }
 
 async function startScanner() {
-  if (!("BarcodeDetector" in window)) {
-    $("scannerMessage").textContent = "Camera QR scanning is not available here. Use manual entry.";
+  if (!navigator.mediaDevices?.getUserMedia) {
+    $("scannerMessage").textContent = "Camera access is not available here. Use manual entry.";
     return;
   }
   try {
-    state.detector = new BarcodeDetector({ formats: ["qr_code"] });
+    stopScanner();
+    if ("BarcodeDetector" in window) {
+      state.detector = new BarcodeDetector({ formats: ["qr_code"] });
+      state.scanMethod = "native";
+    } else if (window.jsQR && state.qrContext) {
+      state.detector = null;
+      state.scanMethod = "jsqr";
+    } else {
+      $("scannerMessage").textContent = "QR decoder did not load. Check your connection or use manual entry.";
+      return;
+    }
     state.stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" } },
       audio: false,
@@ -375,7 +390,7 @@ async function startScanner() {
     $("scanVideo").srcObject = state.stream;
     await $("scanVideo").play();
     $("scannerMessage").textContent = "Point the camera at a QR code";
-    state.scanTimer = setInterval(scanFrame, 650);
+    state.scanTimer = setInterval(scanFrame, state.scanMethod === "native" ? 650 : 250);
   } catch (error) {
     $("scannerMessage").textContent = "Camera unavailable. Use manual entry.";
     showToast("Camera permission or scanner support failed");
@@ -383,14 +398,30 @@ async function startScanner() {
 }
 
 async function scanFrame() {
-  if (!state.detector || !$("scanVideo").srcObject) return;
+  if (state.scanBusy || !$("scanVideo").srcObject) return;
+  state.scanBusy = true;
   try {
-    const codes = await state.detector.detect($("scanVideo"));
-    if (codes[0]?.rawValue) {
-      await processQr(codes[0].rawValue);
+    if (state.scanMethod === "native") {
+      const codes = await state.detector.detect($("scanVideo"));
+      if (codes[0]?.rawValue) {
+        await processQr(codes[0].rawValue);
+      }
+    } else {
+      const video = $("scanVideo");
+      if (!video.videoWidth || !video.videoHeight) return;
+      state.qrCanvas.width = video.videoWidth;
+      state.qrCanvas.height = video.videoHeight;
+      state.qrContext.drawImage(video, 0, 0, state.qrCanvas.width, state.qrCanvas.height);
+      const image = state.qrContext.getImageData(0, 0, state.qrCanvas.width, state.qrCanvas.height);
+      const code = window.jsQR(image.data, image.width, image.height, { inversionAttempts: "dontInvert" });
+      if (code?.data) {
+        await processQr(code.data);
+      }
     }
   } catch {
     $("scannerMessage").textContent = "Scanner paused. Try manual entry.";
+  } finally {
+    state.scanBusy = false;
   }
 }
 
@@ -401,6 +432,9 @@ function stopScanner() {
     state.stream.getTracks().forEach((track) => track.stop());
   }
   state.stream = null;
+  state.scanBusy = false;
+  state.scanMethod = "";
+  state.detector = null;
   $("scanVideo").srcObject = null;
   $("scannerMessage").textContent = "Camera scanner is off";
 }
