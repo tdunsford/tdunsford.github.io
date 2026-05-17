@@ -114,6 +114,10 @@ function formatEventTime(timestamp) {
 }
 
 function shortQr(qr) {
+  const match = String(qr).match(/book(\d{4})(\d{4})/);
+  if (match) {
+    return `${match[1]}/${match[2]}`;
+  }
   return qr.length > 18 ? `${qr.slice(0, 8)}...${qr.slice(-6)}` : qr;
 }
 

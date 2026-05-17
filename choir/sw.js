@@ -1,9 +1,9 @@
-const CACHE_NAME = "choir-books-v5";
+const CACHE_NAME = "choir-books-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=0.4.1",
-  "./app.js?v=0.4.1",
+  "./styles.css?v=0.4.2",
+  "./app.js?v=0.4.2",
   "./icon.svg",
   "./manifest.webmanifest"
 ];
