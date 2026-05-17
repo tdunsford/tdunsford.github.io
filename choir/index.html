@@ -9,12 +9,12 @@
     <title>Choir Books</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css?v=0.4.0">
+    <link rel="stylesheet" href="styles.css?v=0.4.1">
   </head>
   <body>
     <header class="app-header">
       <div>
-        <p class="eyebrow">Choir Books <span class="version">v0.4.0</span></p>
+        <p class="eyebrow">Choir Books <span class="version">v0.4.1</span></p>
         <h1>Book Assignments</h1>
       </div>
       <button id="installButton" class="ghost hidden" type="button">Install</button>
@@ -90,23 +90,17 @@
         <div class="section-title">
           <h2 id="scanTitle">Scan</h2>
         </div>
-        <div class="scanner">
-          <video id="scanVideo" playsinline muted></video>
-          <div id="scannerMessage" class="scanner-message">Camera scanner is off</div>
+        <div id="scanCameraPane" class="scan-camera">
+          <div class="scanner">
+            <video id="scanVideo" playsinline muted></video>
+            <div id="scannerMessage" class="scanner-message">Camera scanner is off</div>
+          </div>
+          <div class="actions">
+            <button id="startScanButton" type="button">Start Camera</button>
+            <button id="stopScanButton" class="secondary" type="button">Stop</button>
+          </div>
         </div>
-        <div class="actions">
-          <button id="startScanButton" type="button">Start Camera</button>
-          <button id="stopScanButton" class="secondary" type="button">Stop</button>
-        </div>
-        <form id="manualScanForm" class="manual-entry">
-          <label>
-            <span>QR value</span>
-            <input id="manualQr" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste or type QR code">
-          </label>
-          <button type="submit">Use Code</button>
-        </form>
         <div id="scanResult" class="panel scan-result hidden"></div>
-        <div id="scanLog" class="log"></div>
       </section>
 
       <section id="backupView" class="view" aria-labelledby="backupTitle">
@@ -139,6 +133,6 @@
 
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="app.js?v=0.4.0"></script>
+    <script src="app.js?v=0.4.1"></script>
   </body>
 </html>

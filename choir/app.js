@@ -207,15 +207,18 @@ function memberOptions(selectedId = "") {
 
 function renderScanResult() {
   const panel = $("scanResult");
+  const scanView = $("scanView");
   if (!panel) return;
   if (!state.pendingQr) {
     panel.classList.add("hidden");
     panel.innerHTML = "";
+    scanView?.classList.remove("scan-has-result");
     return;
   }
 
   const book = state.books.find((item) => item.qr === state.pendingQr);
   panel.classList.remove("hidden");
+  scanView?.classList.add("scan-has-result");
 
   if (book?.currentMemberId) {
     panel.innerHTML = `
@@ -413,15 +416,12 @@ function clearScanResult() {
 }
 
 function addLog(message) {
-  const log = $("scanLog");
-  const item = document.createElement("p");
-  item.textContent = `${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}: ${message}`;
-  log.prepend(item);
+  console.info(message);
 }
 
 async function startScanner() {
   if (!navigator.mediaDevices?.getUserMedia) {
-    $("scannerMessage").textContent = "Camera access is not available here. Use manual entry.";
+    $("scannerMessage").textContent = "Camera access is not available here.";
     return;
   }
   try {
@@ -433,7 +433,7 @@ async function startScanner() {
       state.detector = null;
       state.scanMethod = "jsqr";
     } else {
-      $("scannerMessage").textContent = "QR decoder did not load. Check your connection or use manual entry.";
+      $("scannerMessage").textContent = "QR decoder did not load. Check your connection.";
       return;
     }
     state.stream = await navigator.mediaDevices.getUserMedia({
@@ -445,7 +445,7 @@ async function startScanner() {
     $("scannerMessage").textContent = "Point the camera at a QR code";
     state.scanTimer = setInterval(scanFrame, state.scanMethod === "native" ? 650 : 250);
   } catch (error) {
-    $("scannerMessage").textContent = "Camera unavailable. Use manual entry.";
+    $("scannerMessage").textContent = "Camera unavailable.";
     showToast("Camera permission or scanner support failed");
   }
 }
@@ -472,7 +472,7 @@ async function scanFrame() {
       }
     }
   } catch {
-    $("scannerMessage").textContent = "Scanner paused. Try manual entry.";
+    $("scannerMessage").textContent = "Scanner paused. Restart the camera.";
   } finally {
     state.scanBusy = false;
   }
@@ -568,12 +568,6 @@ function bindEvents() {
   });
   $("startScanButton").addEventListener("click", startScanner);
   $("stopScanButton").addEventListener("click", stopScanner);
-  $("manualScanForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await processQr($("manualQr").value);
-    $("manualQr").value = "";
-    $("manualQr").focus();
-  });
   $("scanResult").addEventListener("click", async (event) => {
     const checkoutQr = event.target.dataset.confirmCheckout;
     const returnQr = event.target.dataset.confirmReturn;

@@ -138,8 +138,7 @@ main {
 .stats article,
 .panel,
 .item,
-.scanner,
-.log {
+.scanner {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -291,14 +290,15 @@ select {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 260px;
+  height: min(50vh, 420px);
+  min-height: 300px;
   overflow: hidden;
   background: #0f1b1d;
 }
 
 video {
   width: 100%;
-  min-height: 260px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -313,37 +313,21 @@ video {
   font-weight: 700;
 }
 
-.manual-entry {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: end;
-}
-
-.manual-entry label {
-  margin: 0;
-}
-
 .scan-result h3 {
   margin: 0 0 6px;
   font-size: 1.05rem;
+}
+
+.scan-result {
+  margin-top: 12px;
 }
 
 .scan-result .actions {
   margin-bottom: 0;
 }
 
-.log {
-  min-height: 90px;
-  max-height: 190px;
-  overflow: auto;
-  padding: 12px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.log p {
-  margin: 0 0 8px;
+.scan-has-result .scan-camera {
+  display: none;
 }
 
 .file-button {
