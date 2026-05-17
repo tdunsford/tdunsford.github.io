@@ -489,6 +489,9 @@ async function clearData() {
 function bindEvents() {
   document.querySelectorAll(".tabbar button").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.view !== "scanView") {
+        stopScanner();
+      }
       document.querySelectorAll(".tabbar button").forEach((item) => item.classList.remove("active"));
       document.querySelectorAll(".view").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
