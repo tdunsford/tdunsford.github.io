@@ -9,12 +9,12 @@
     <title>Choir Books</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css?v=0.3.1">
+    <link rel="stylesheet" href="styles.css?v=0.4.0">
   </head>
   <body>
     <header class="app-header">
       <div>
-        <p class="eyebrow">Choir Books <span class="version">v0.3.1</span></p>
+        <p class="eyebrow">Choir Books <span class="version">v0.4.0</span></p>
         <h1>Book Assignments</h1>
       </div>
       <button id="installButton" class="ghost hidden" type="button">Install</button>
@@ -90,14 +90,6 @@
         <div class="section-title">
           <h2 id="scanTitle">Scan</h2>
         </div>
-        <div class="segmented" role="group" aria-label="Scan mode">
-          <button id="checkoutMode" class="active" type="button">Checkout</button>
-          <button id="returnMode" type="button">Return</button>
-        </div>
-        <label id="memberPickerLabel">
-          <span>Member</span>
-          <select id="scanMember"></select>
-        </label>
         <div class="scanner">
           <video id="scanVideo" playsinline muted></video>
           <div id="scannerMessage" class="scanner-message">Camera scanner is off</div>
@@ -113,6 +105,7 @@
           </label>
           <button type="submit">Use Code</button>
         </form>
+        <div id="scanResult" class="panel scan-result hidden"></div>
         <div id="scanLog" class="log"></div>
       </section>
 
@@ -146,6 +139,6 @@
 
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="app.js?v=0.3.1"></script>
+    <script src="app.js?v=0.4.0"></script>
   </body>
 </html>

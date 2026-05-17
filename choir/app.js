@@ -6,7 +6,7 @@ const state = {
   members: [],
   books: [],
   events: [],
-  scanMode: "checkout",
+  pendingQr: "",
   stream: null,
   detector: null,
   scanTimer: null,
@@ -128,7 +128,7 @@ function showToast(message) {
 function render() {
   renderDashboard();
   renderMembers();
-  renderScanMemberOptions();
+  renderScanResult();
 }
 
 function renderDashboard() {
@@ -198,17 +198,50 @@ function renderMembers() {
     : `<article class="item"><p class="meta">No members found.</p></article>`;
 }
 
-function renderScanMemberOptions() {
-  const select = $("scanMember");
-  const current = select.value;
+function memberOptions(selectedId = "") {
   const members = activeMembers();
-  select.innerHTML = members.length
+  return members.length
     ? members.map((member) => `<option value="${member.id}">${escapeHtml(member.name)}</option>`).join("")
     : `<option value="">Add a member first</option>`;
-  if (members.some((member) => member.id === current)) {
-    select.value = current;
+}
+
+function renderScanResult() {
+  const panel = $("scanResult");
+  if (!panel) return;
+  if (!state.pendingQr) {
+    panel.classList.add("hidden");
+    panel.innerHTML = "";
+    return;
   }
-  $("memberPickerLabel").classList.toggle("hidden", state.scanMode === "return");
+
+  const book = state.books.find((item) => item.qr === state.pendingQr);
+  panel.classList.remove("hidden");
+
+  if (book?.currentMemberId) {
+    panel.innerHTML = `
+      <h3>Book is checked out</h3>
+      <p class="meta">Book ${escapeHtml(book.qr)}</p>
+      <p class="meta">Assigned to ${escapeHtml(memberName(book.currentMemberId))}</p>
+      <div class="actions">
+        <button type="button" data-confirm-return="${escapeAttr(book.qr)}">Confirm Return</button>
+        <button class="secondary" type="button" data-cancel-scan>Scan Another</button>
+      </div>
+    `;
+    return;
+  }
+
+  panel.innerHTML = `
+    <h3>Book is available</h3>
+    <p class="meta">Book ${escapeHtml(state.pendingQr)}</p>
+    <label>
+      <span>Assign to member</span>
+      <select id="pendingMember">${memberOptions()}</select>
+    </label>
+    <div class="actions">
+      <button type="button" data-confirm-checkout="${escapeAttr(state.pendingQr)}">Check Out</button>
+      <button class="secondary" type="button" data-cancel-scan>Scan Another</button>
+    </div>
+  `;
 }
 
 function escapeHtml(value) {
@@ -284,21 +317,33 @@ async function deleteMember(id) {
 async function processQr(rawValue) {
   const qr = rawValue.trim();
   if (!qr) return;
+  if (state.pendingQr) return;
   const now = Date.now();
   if (state.lastScan.value === qr && now - state.lastScan.at < 1800) return;
   state.lastScan = { value: qr, at: now };
 
-  if (state.scanMode === "return") {
-    await returnBook(qr);
-  } else {
-    await checkoutBook(qr, $("scanMember").value);
+  let book = state.books.find((item) => item.qr === qr);
+  if (!book) {
+    const timestamp = new Date().toISOString();
+    book = {
+      qr,
+      firstSeenAt: timestamp,
+      currentMemberId: "",
+      updatedAt: timestamp,
+    };
+    await put("books", book);
+    await loadState();
+    addLog(`Added new book ${qr}`);
   }
+
+  state.pendingQr = qr;
+  renderScanResult();
 }
 
 async function checkoutBook(qr, memberId) {
   if (!memberId) {
     showToast("Add or select a member first");
-    return;
+    return false;
   }
 
   let book = state.books.find((item) => item.qr === qr);
@@ -308,7 +353,7 @@ async function checkoutBook(qr, memberId) {
     const message = `Book ${qr} is assigned to ${memberName(book.currentMemberId)}. Transfer to ${memberName(memberId)}?`;
     if (!confirm(message)) {
       addLog(`Skipped ${qr}`);
-      return;
+      return false;
     }
   }
 
@@ -330,6 +375,7 @@ async function checkoutBook(qr, memberId) {
   await loadState();
   addLog(`Assigned ${qr} to ${memberName(memberId)}`);
   showToast("Book assigned");
+  return true;
 }
 
 async function returnBook(qr) {
@@ -337,12 +383,12 @@ async function returnBook(qr) {
   if (!book) {
     addLog(`Unknown book ${qr}`);
     showToast("Unknown book");
-    return;
+    return false;
   }
   if (!book.currentMemberId) {
     addLog(`${qr} is already unassigned`);
     showToast("Book is already returned");
-    return;
+    return false;
   }
   const memberId = book.currentMemberId;
   const now = new Date().toISOString();
@@ -357,6 +403,13 @@ async function returnBook(qr) {
   await loadState();
   addLog(`Returned ${qr} from ${memberName(memberId)}`);
   showToast("Book returned");
+  return true;
+}
+
+function clearScanResult() {
+  state.pendingQr = "";
+  state.lastScan = { value: "", at: 0 };
+  renderScanResult();
 }
 
 function addLog(message) {
@@ -439,13 +492,6 @@ function stopScanner() {
   $("scannerMessage").textContent = "Camera scanner is off";
 }
 
-function setMode(mode) {
-  state.scanMode = mode;
-  $("checkoutMode").classList.toggle("active", mode === "checkout");
-  $("returnMode").classList.toggle("active", mode === "return");
-  renderScanMemberOptions();
-}
-
 function exportData() {
   const data = {
     exportedAt: new Date().toISOString(),
@@ -520,8 +566,6 @@ function bindEvents() {
   $("assignedList").addEventListener("click", async (event) => {
     if (event.target.dataset.return) await returnBook(event.target.dataset.return);
   });
-  $("checkoutMode").addEventListener("click", () => setMode("checkout"));
-  $("returnMode").addEventListener("click", () => setMode("return"));
   $("startScanButton").addEventListener("click", startScanner);
   $("stopScanButton").addEventListener("click", stopScanner);
   $("manualScanForm").addEventListener("submit", async (event) => {
@@ -529,6 +573,22 @@ function bindEvents() {
     await processQr($("manualQr").value);
     $("manualQr").value = "";
     $("manualQr").focus();
+  });
+  $("scanResult").addEventListener("click", async (event) => {
+    const checkoutQr = event.target.dataset.confirmCheckout;
+    const returnQr = event.target.dataset.confirmReturn;
+    if (event.target.dataset.cancelScan !== undefined) {
+      clearScanResult();
+      return;
+    }
+    if (checkoutQr) {
+      const success = await checkoutBook(checkoutQr, $("pendingMember")?.value || "");
+      if (success) clearScanResult();
+    }
+    if (returnQr) {
+      const success = await returnBook(returnQr);
+      if (success) clearScanResult();
+    }
   });
   $("exportButton").addEventListener("click", exportData);
   $("importInput").addEventListener("change", async (event) => {
