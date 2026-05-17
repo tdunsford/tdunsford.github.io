@@ -23,6 +23,8 @@ body {
   background: var(--bg);
   color: var(--text);
   padding: env(safe-area-inset-top) 0 calc(76px + env(safe-area-inset-bottom));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 button,
@@ -174,6 +176,7 @@ select {
   background: #fff;
   color: var(--text);
   padding: 0 12px;
+  font-size: 16px;
 }
 
 .panel {
