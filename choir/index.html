@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#155e63">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Choir Books">
+    <title>Choir Books</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Choir Books</p>
+        <h1>Book Assignments</h1>
+      </div>
+      <button id="installButton" class="ghost hidden" type="button">Install</button>
+    </header>
+
+    <main>
+      <section id="dashboardView" class="view active" aria-labelledby="dashboardTitle">
+        <div class="section-title">
+          <h2 id="dashboardTitle">Dashboard</h2>
+          <button id="refreshButton" class="icon-button" type="button" aria-label="Refresh">↻</button>
+        </div>
+        <div class="stats">
+          <article>
+            <span id="memberCount">0</span>
+            <p>Active members</p>
+          </article>
+          <article>
+            <span id="knownBookCount">0</span>
+            <p>Known books</p>
+          </article>
+          <article>
+            <span id="assignedBookCount">0</span>
+            <p>Assigned books</p>
+          </article>
+        </div>
+        <label class="search">
+          <span>Search</span>
+          <input id="globalSearch" type="search" autocomplete="off" placeholder="Member or QR code">
+        </label>
+        <div id="assignedList" class="list"></div>
+      </section>
+
+      <section id="membersView" class="view" aria-labelledby="membersTitle">
+        <div class="section-title">
+          <h2 id="membersTitle">Members</h2>
+          <button id="newMemberButton" type="button">Add</button>
+        </div>
+        <form id="memberForm" class="panel hidden">
+          <input id="memberId" type="hidden">
+          <label>
+            <span>Name</span>
+            <input id="memberName" required autocomplete="name">
+          </label>
+          <label>
+            <span>Voice part</span>
+            <select id="memberVoice">
+              <option value="">Not set</option>
+              <option>Soprano</option>
+              <option>Alto</option>
+              <option>Tenor</option>
+              <option>Bass</option>
+              <option>Director</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>
+            <span>Contact</span>
+            <input id="memberContact" autocomplete="email" placeholder="Email or phone">
+          </label>
+          <div class="actions">
+            <button type="submit">Save</button>
+            <button id="cancelMemberButton" class="secondary" type="button">Cancel</button>
+          </div>
+        </form>
+        <label class="search">
+          <span>Search members</span>
+          <input id="memberSearch" type="search" autocomplete="off" placeholder="Name, voice, contact">
+        </label>
+        <div id="memberList" class="list"></div>
+      </section>
+
+      <section id="scanView" class="view" aria-labelledby="scanTitle">
+        <div class="section-title">
+          <h2 id="scanTitle">Scan</h2>
+        </div>
+        <div class="segmented" role="group" aria-label="Scan mode">
+          <button id="checkoutMode" class="active" type="button">Checkout</button>
+          <button id="returnMode" type="button">Return</button>
+        </div>
+        <label id="memberPickerLabel">
+          <span>Member</span>
+          <select id="scanMember"></select>
+        </label>
+        <div class="scanner">
+          <video id="scanVideo" playsinline muted></video>
+          <div id="scannerMessage" class="scanner-message">Camera scanner is off</div>
+        </div>
+        <div class="actions">
+          <button id="startScanButton" type="button">Start Camera</button>
+          <button id="stopScanButton" class="secondary" type="button">Stop</button>
+        </div>
+        <form id="manualScanForm" class="manual-entry">
+          <label>
+            <span>QR value</span>
+            <input id="manualQr" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste or type QR code">
+          </label>
+          <button type="submit">Use Code</button>
+        </form>
+        <div id="scanLog" class="log"></div>
+      </section>
+
+      <section id="backupView" class="view" aria-labelledby="backupTitle">
+        <div class="section-title">
+          <h2 id="backupTitle">Backup</h2>
+        </div>
+        <div class="panel">
+          <p>Export a backup before clearing browser data or moving to another device.</p>
+          <div class="actions">
+            <button id="exportButton" type="button">Export JSON</button>
+            <label class="file-button">
+              Import JSON
+              <input id="importInput" type="file" accept="application/json">
+            </label>
+          </div>
+        </div>
+        <div class="panel danger">
+          <p>Clear all local members, books, and history on this device.</p>
+          <button id="clearButton" class="danger-button" type="button">Clear Data</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Main navigation">
+      <button class="active" data-view="dashboardView" type="button">Home</button>
+      <button data-view="membersView" type="button">Members</button>
+      <button data-view="scanView" type="button">Scan</button>
+      <button data-view="backupView" type="button">Backup</button>
+    </nav>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
