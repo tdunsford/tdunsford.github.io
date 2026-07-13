@@ -4,7 +4,7 @@ const STORAGE_KEYS = {
     history: "scorekeeper.history.v1",
     settings: "scorekeeper.settings.v1"
 };
-const APP_VERSION = "v1.1";
+const APP_VERSION = "v1.2";
 
 const PLAYER_EMOJI_CATEGORIES = [
     {

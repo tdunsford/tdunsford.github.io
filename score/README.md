@@ -67,4 +67,4 @@ Recent history entries can be deleted for 30 minutes after completion, which is 
 - Designed primarily for iPhone/mobile use
 - Works offline once the files are available locally
 - Asset URLs use version query strings to help with mobile browser caching
-- The visible app version starts at `v1.1`; bump it with each app change
+- The visible app version is maintained in `APP_VERSION`; bump it with each app change
