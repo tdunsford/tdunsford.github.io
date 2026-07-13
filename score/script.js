@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
     history: "scorekeeper.history.v1",
     settings: "scorekeeper.settings.v1"
 };
+const APP_VERSION = "v1.1";
 
 const PLAYER_EMOJI_CATEGORIES = [
     {
@@ -109,6 +110,7 @@ const el = {
     importInput: document.getElementById("import-input"),
     clearDataBtn: document.getElementById("clear-data-btn"),
     resumeGameBtn: document.getElementById("resume-game-btn"),
+    appVersion: document.getElementById("app-version"),
     tabButtons: [...document.querySelectorAll(".tab-button")],
     tabPanels: [...document.querySelectorAll(".tab-panel")],
     appMessage: document.getElementById("app-message"),
@@ -519,6 +521,33 @@ function deleteHistoryEntry(gameId) {
     state.history = state.history.filter((entry) => entry.id !== gameId);
     persist();
     renderHistory();
+}
+
+function playHistoryGame(gameId) {
+    const game = state.history.find((entry) => entry.id === gameId);
+    if (!game) {
+        return;
+    }
+    if (state.activeGame) {
+        window.alert("Finish or abandon the active game before setting up another.");
+        return;
+    }
+
+    const selectedPlayerIds = [...new Set(game.playerIds || [])].filter((playerId) => getPlayerById(playerId));
+    if (selectedPlayerIds.length < 2) {
+        window.alert("At least two saved players from this history entry are needed to play again.");
+        return;
+    }
+
+    state.draft.selectedGameName = normalizeName(game.name);
+    state.draft.selectedPlayerIds = selectedPlayerIds;
+    state.settings.showArchivedPlayers = state.settings.showArchivedPlayers
+        || selectedPlayerIds.some((playerId) => getPlayerById(playerId)?.archived);
+    state.settings.activeTab = "games";
+    persist();
+    render();
+    showMessage(`Ready to play "${state.draft.selectedGameName}" again.`);
+    document.getElementById("new-game-heading").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function exportData() {
@@ -1021,18 +1050,25 @@ function renderHistory() {
                 scoresWrap.appendChild(row);
             });
 
+        const actionRow = document.createElement("div");
+        actionRow.className = "history-actions";
+        const playAgainButton = document.createElement("button");
+        playAgainButton.type = "button";
+        playAgainButton.className = "button button-secondary";
+        playAgainButton.textContent = "Play Again";
+        playAgainButton.addEventListener("click", () => playHistoryGame(game.id));
+        actionRow.appendChild(playAgainButton);
+
         if (canDeleteHistoryEntry(game)) {
-            const actionRow = document.createElement("div");
-            actionRow.className = "history-actions";
             const deleteButton = document.createElement("button");
             deleteButton.type = "button";
             deleteButton.className = "button button-ghost";
             deleteButton.textContent = "Delete";
             deleteButton.addEventListener("click", () => deleteHistoryEntry(game.id));
             actionRow.appendChild(deleteButton);
-            fragment.querySelector(".history-card").appendChild(actionRow);
         }
 
+        fragment.querySelector(".history-card").appendChild(actionRow);
         el.historyList.appendChild(fragment);
     });
 }
@@ -1236,4 +1272,5 @@ function bindEvents() {
 
 hydrate();
 bindEvents();
+el.appVersion.textContent = APP_VERSION;
 render();

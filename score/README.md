@@ -11,6 +11,7 @@ Offline web app for tracking game scores on mobile.
 - Track scores during a game with add/subtract controls
 - Keep a scoring timeline and allow undo of the last event
 - Save finished games to local history
+- Replay a history entry with the same game and players preselected
 - Archive players, export/import data, and clear local data
 
 ## How It Works
@@ -66,3 +67,4 @@ Recent history entries can be deleted for 30 minutes after completion, which is 
 - Designed primarily for iPhone/mobile use
 - Works offline once the files are available locally
 - Asset URLs use version query strings to help with mobile browser caching
+- The visible app version starts at `v1.1`; bump it with each app change
