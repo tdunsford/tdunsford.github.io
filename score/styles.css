@@ -341,6 +341,16 @@ body.game-active .panel-side {
     gap: 10px;
 }
 
+.segmented-control {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255, 253, 248, 0.68);
+}
+
 .emoji-picker-scroll {
     max-height: 180px;
     overflow-y: auto;
@@ -396,6 +406,44 @@ body.game-active .panel-side {
     min-width: 0;
 }
 
+.player-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1em;
+    height: 2.1em;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #efe4d1;
+    border: 1px solid rgba(216, 207, 191, 0.8);
+}
+
+.player-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.player-avatar .player-emoji {
+    width: auto;
+}
+
+.player-row-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.archived-label {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
 .player-emoji {
     display: inline-flex;
     align-items: center;
@@ -404,6 +452,39 @@ body.game-active .panel-side {
     flex: 0 0 auto;
     font-size: 1.8em;
     line-height: 1;
+}
+
+.photo-editor {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-strong);
+}
+
+.photo-crop-canvas {
+    width: 192px;
+    height: 192px;
+    max-width: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: var(--surface-muted);
+    touch-action: none;
+    cursor: grab;
+}
+
+.photo-crop-canvas.is-dragging {
+    cursor: grabbing;
+}
+
+.photo-zoom-field {
+    width: 100%;
+}
+
+.photo-zoom-field input[type="range"] {
+    padding: 0;
 }
 
 .subsection {

@@ -6,7 +6,7 @@ Offline web app for tracking game scores on mobile.
 
 - Create a new game and select players from a saved list
 - Reuse game names from a dropdown or add a new one
-- Add new players with a name and emoji
+- Add new players with a name and emoji or cropped photo avatar
 - Save players permanently in `localStorage`
 - Track scores during a game with add/subtract controls
 - Keep a scoring timeline and allow undo of the last event

@@ -4,7 +4,7 @@ const STORAGE_KEYS = {
     history: "scorekeeper.history.v1",
     settings: "scorekeeper.settings.v1"
 };
-const APP_VERSION = "v1.2";
+const APP_VERSION = "v1.4";
 
 const PLAYER_EMOJI_CATEGORIES = [
     {
@@ -49,6 +49,8 @@ const PLAYER_EMOJI_CATEGORIES = [
     }
 ];
 const DEFAULT_PLAYER_EMOJI = "🙂";
+const DEFAULT_AVATAR_TYPE = "emoji";
+const PHOTO_AVATAR_SIZE = 192;
 const HISTORY_DELETE_WINDOW_MS = 30 * 60 * 1000;
 const ADD_GAME_NAME_VALUE = "__add_game_name__";
 
@@ -64,7 +66,19 @@ const state = {
     draft: {
         selectedPlayerIds: [],
         selectedGameName: "",
-        selectedPlayerEmoji: DEFAULT_PLAYER_EMOJI
+        selectedPlayerEmoji: DEFAULT_PLAYER_EMOJI,
+        selectedAvatarType: DEFAULT_AVATAR_TYPE,
+        selectedPhotoDataUrl: ""
+    },
+    avatarEditor: {
+        sourceImage: null,
+        sourceDataUrl: "",
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+        dragging: false,
+        lastX: 0,
+        lastY: 0
     },
     scoreDialogPlayerId: null,
     editingPlayerId: null,
@@ -89,6 +103,13 @@ const el = {
     gameNameCancelBtn: document.getElementById("game-name-cancel-btn"),
     playerNameInput: document.getElementById("player-name-input"),
     playerEmojiPicker: document.getElementById("player-emoji-picker"),
+    avatarEmojiModeBtn: document.getElementById("avatar-emoji-mode-btn"),
+    avatarPhotoModeBtn: document.getElementById("avatar-photo-mode-btn"),
+    emojiAvatarPanel: document.getElementById("emoji-avatar-panel"),
+    photoAvatarPanel: document.getElementById("photo-avatar-panel"),
+    playerPhotoInput: document.getElementById("player-photo-input"),
+    photoCropCanvas: document.getElementById("photo-crop-canvas"),
+    photoZoomInput: document.getElementById("photo-zoom-input"),
     openPlayerDialogBtn: document.getElementById("open-player-dialog-btn"),
     savedPlayers: document.getElementById("saved-players"),
     savedSuggestions: document.getElementById("player-suggestions"),
@@ -153,6 +174,17 @@ function persist() {
     saveJson(STORAGE_KEYS.settings, state.settings);
 }
 
+function normalizePlayerRecord(player) {
+    const emoji = player.emoji || DEFAULT_PLAYER_EMOJI;
+    const avatarType = player.avatarType === "photo" && player.photoDataUrl ? "photo" : DEFAULT_AVATAR_TYPE;
+    return {
+        ...player,
+        emoji,
+        avatarType,
+        photoDataUrl: avatarType === "photo" ? player.photoDataUrl : ""
+    };
+}
+
 function hydrate() {
     state.players = loadJson(STORAGE_KEYS.players, []);
     state.activeGame = loadJson(STORAGE_KEYS.activeGame, null);
@@ -163,10 +195,7 @@ function hydrate() {
         activeTab: "games",
         ...loadJson(STORAGE_KEYS.settings, {})
     };
-    state.players = state.players.map((player) => ({
-        ...player,
-        emoji: player.emoji || DEFAULT_PLAYER_EMOJI
-    }));
+    state.players = state.players.map(normalizePlayerRecord);
     localStorage.removeItem("scorekeeper.gameNames.v1");
 }
 
@@ -251,11 +280,14 @@ function getPlayerStats(playerId) {
     return stats;
 }
 
-function createPlayer(name, emoji = DEFAULT_PLAYER_EMOJI) {
+function createPlayer(name, avatar = {}) {
+    const avatarType = avatar.avatarType === "photo" && avatar.photoDataUrl ? "photo" : DEFAULT_AVATAR_TYPE;
     const player = {
         id: uid("player"),
         name: normalizeName(name),
-        emoji: emoji || DEFAULT_PLAYER_EMOJI,
+        emoji: avatar.emoji || DEFAULT_PLAYER_EMOJI,
+        avatarType,
+        photoDataUrl: avatarType === "photo" ? avatar.photoDataUrl : "",
         createdAt: new Date().toISOString(),
         archived: false
     };
@@ -270,7 +302,7 @@ function ensurePlayer(name, emoji = DEFAULT_PLAYER_EMOJI) {
     if (!normalized) {
         return null;
     }
-    return getExistingPlayerByNormalizedName(normalized) || createPlayer(normalized, emoji);
+    return getExistingPlayerByNormalizedName(normalized) || createPlayer(normalized, { emoji });
 }
 
 function activeGamePlayers() {
@@ -283,6 +315,8 @@ function activeGamePlayers() {
             id: playerId,
             name: player ? player.name : "Unknown player",
             emoji: player ? (player.emoji || DEFAULT_PLAYER_EMOJI) : DEFAULT_PLAYER_EMOJI,
+            avatarType: player ? (player.avatarType || DEFAULT_AVATAR_TYPE) : DEFAULT_AVATAR_TYPE,
+            photoDataUrl: player ? (player.photoDataUrl || "") : "",
             score: state.activeGame.scores[playerId] || 0
         };
     }).sort((a, b) => {
@@ -576,7 +610,7 @@ function importData(file) {
             if (!Array.isArray(data.players) || !Array.isArray(data.history)) {
                 throw new Error("Invalid backup format.");
             }
-            state.players = data.players;
+            state.players = data.players.map(normalizePlayerRecord);
             state.activeGame = data.activeGame || null;
             state.history = data.history;
             state.settings = {
@@ -587,6 +621,9 @@ function importData(file) {
             };
             state.draft.selectedPlayerIds = [];
             state.draft.selectedGameName = "";
+            state.draft.selectedPlayerEmoji = DEFAULT_PLAYER_EMOJI;
+            state.draft.selectedAvatarType = DEFAULT_AVATAR_TYPE;
+            state.draft.selectedPhotoDataUrl = "";
             persist();
             render();
         } catch (error) {
@@ -614,6 +651,9 @@ function clearAllData() {
     state.settings = { showArchivedPlayers: false, currentGameSort: "alpha", activeTab: "games" };
     state.draft.selectedPlayerIds = [];
     state.draft.selectedGameName = "";
+    state.draft.selectedPlayerEmoji = DEFAULT_PLAYER_EMOJI;
+    state.draft.selectedAvatarType = DEFAULT_AVATAR_TYPE;
+    state.draft.selectedPhotoDataUrl = "";
     render();
 }
 
@@ -644,7 +684,13 @@ function openPlayerDialog(playerId = null) {
     el.playerDialogTitle.textContent = player ? "Rename Player" : "Add Player";
     el.playerNameInput.value = player ? player.name : "";
     state.draft.selectedPlayerEmoji = player ? (player.emoji || DEFAULT_PLAYER_EMOJI) : (state.draft.selectedPlayerEmoji || DEFAULT_PLAYER_EMOJI);
+    state.draft.selectedAvatarType = player?.avatarType === "photo" && player.photoDataUrl ? "photo" : DEFAULT_AVATAR_TYPE;
+    resetAvatarEditor();
     renderPlayerEmojiPicker();
+    renderAvatarMode();
+    if (player?.avatarType === "photo" && player.photoDataUrl) {
+        loadPhotoDataUrl(player.photoDataUrl);
+    }
     if (typeof el.playerDialog.showModal === "function") {
         el.playerDialog.showModal();
         window.requestAnimationFrame(() => {
@@ -656,6 +702,7 @@ function openPlayerDialog(playerId = null) {
 
 function closePlayerDialog() {
     state.editingPlayerId = null;
+    el.playerPhotoInput.value = "";
     el.playerDialog.close();
 }
 
@@ -688,9 +735,18 @@ function submitGameNameForm() {
 function submitPlayerForm() {
     const name = normalizeName(el.playerNameInput.value);
     const emoji = sanitizeEmoji(state.draft.selectedPlayerEmoji);
+    const avatar = {
+        avatarType: state.draft.selectedAvatarType,
+        emoji,
+        photoDataUrl: state.draft.selectedAvatarType === "photo" ? state.draft.selectedPhotoDataUrl : ""
+    };
 
     if (!name) {
         el.playerNameInput.focus();
+        return;
+    }
+    if (avatar.avatarType === "photo" && !avatar.photoDataUrl) {
+        window.alert("Choose a photo or switch back to Emoji.");
         return;
     }
 
@@ -707,6 +763,8 @@ function submitPlayerForm() {
         }
         player.name = name;
         player.emoji = emoji;
+        player.avatarType = avatar.avatarType === "photo" ? "photo" : DEFAULT_AVATAR_TYPE;
+        player.photoDataUrl = player.avatarType === "photo" ? avatar.photoDataUrl : "";
         state.players.sort(playerSort);
         persist();
         render();
@@ -722,9 +780,11 @@ function submitPlayerForm() {
         return;
     }
 
-    const player = createPlayer(name, emoji);
+    const player = createPlayer(name, avatar);
     addSelectedPlayer(player.id);
     state.draft.selectedPlayerEmoji = DEFAULT_PLAYER_EMOJI;
+    state.draft.selectedAvatarType = DEFAULT_AVATAR_TYPE;
+    state.draft.selectedPhotoDataUrl = "";
     render();
     closePlayerDialog();
 }
@@ -837,13 +897,183 @@ function formatDateOnly(iso) {
     });
 }
 
+function getPlayerAvatar(player) {
+    if (player?.avatarType === "photo" && player.photoDataUrl) {
+        return {
+            type: "photo",
+            emoji: player.emoji || DEFAULT_PLAYER_EMOJI,
+            photoDataUrl: player.photoDataUrl
+        };
+    }
+    return {
+        type: DEFAULT_AVATAR_TYPE,
+        emoji: player?.emoji || DEFAULT_PLAYER_EMOJI,
+        photoDataUrl: ""
+    };
+}
+
+function formatPlayerAvatar(player) {
+    const avatar = getPlayerAvatar(player);
+    if (avatar.type === "photo") {
+        return `<span class="player-avatar"><img src="${avatar.photoDataUrl}" alt=""></span>`;
+    }
+    return `<span class="player-avatar"><span class="player-emoji">${avatar.emoji}</span></span>`;
+}
+
 function formatPlayerLabel(player) {
-    return `<span class="player-name-inline"><span class="player-emoji">${player.emoji || DEFAULT_PLAYER_EMOJI}</span><span>${player.name}</span></span>`;
+    return `<span class="player-name-inline">${formatPlayerAvatar(player)}<span>${player.name}</span></span>`;
 }
 
 function sanitizeEmoji(value) {
     const normalized = String(value || "").trim();
     return normalized || DEFAULT_PLAYER_EMOJI;
+}
+
+function resetAvatarEditor() {
+    state.avatarEditor.sourceImage = null;
+    state.avatarEditor.sourceDataUrl = "";
+    state.avatarEditor.zoom = 1;
+    state.avatarEditor.offsetX = 0;
+    state.avatarEditor.offsetY = 0;
+    state.avatarEditor.dragging = false;
+    state.avatarEditor.lastX = 0;
+    state.avatarEditor.lastY = 0;
+    state.draft.selectedPhotoDataUrl = "";
+    el.photoZoomInput.value = "1";
+    el.photoZoomInput.disabled = true;
+    renderPhotoCropCanvas();
+}
+
+function setSelectedAvatarType(avatarType) {
+    state.draft.selectedAvatarType = avatarType === "photo" ? "photo" : DEFAULT_AVATAR_TYPE;
+    renderAvatarMode();
+}
+
+function renderAvatarMode() {
+    const isPhoto = state.draft.selectedAvatarType === "photo";
+    el.emojiAvatarPanel.hidden = isPhoto;
+    el.photoAvatarPanel.hidden = !isPhoto;
+    el.avatarEmojiModeBtn.classList.toggle("button-secondary", !isPhoto);
+    el.avatarEmojiModeBtn.classList.toggle("button-ghost", isPhoto);
+    el.avatarPhotoModeBtn.classList.toggle("button-secondary", isPhoto);
+    el.avatarPhotoModeBtn.classList.toggle("button-ghost", !isPhoto);
+    renderPhotoCropCanvas();
+}
+
+function clampPhotoOffset() {
+    const image = state.avatarEditor.sourceImage;
+    if (!image) {
+        return;
+    }
+    const baseScale = Math.max(PHOTO_AVATAR_SIZE / image.naturalWidth, PHOTO_AVATAR_SIZE / image.naturalHeight);
+    const scale = baseScale * state.avatarEditor.zoom;
+    const drawWidth = image.naturalWidth * scale;
+    const drawHeight = image.naturalHeight * scale;
+    const maxX = Math.max(0, (drawWidth - PHOTO_AVATAR_SIZE) / 2);
+    const maxY = Math.max(0, (drawHeight - PHOTO_AVATAR_SIZE) / 2);
+    state.avatarEditor.offsetX = Math.max(-maxX, Math.min(maxX, state.avatarEditor.offsetX));
+    state.avatarEditor.offsetY = Math.max(-maxY, Math.min(maxY, state.avatarEditor.offsetY));
+}
+
+function renderPhotoCropCanvas() {
+    const canvas = el.photoCropCanvas;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, PHOTO_AVATAR_SIZE, PHOTO_AVATAR_SIZE);
+    ctx.fillStyle = "#f1ebe0";
+    ctx.fillRect(0, 0, PHOTO_AVATAR_SIZE, PHOTO_AVATAR_SIZE);
+
+    const image = state.avatarEditor.sourceImage;
+    if (!image) {
+        ctx.fillStyle = "#6f6557";
+        ctx.font = "700 16px Avenir Next, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Choose Photo", PHOTO_AVATAR_SIZE / 2, PHOTO_AVATAR_SIZE / 2);
+        return;
+    }
+
+    clampPhotoOffset();
+    const baseScale = Math.max(PHOTO_AVATAR_SIZE / image.naturalWidth, PHOTO_AVATAR_SIZE / image.naturalHeight);
+    const scale = baseScale * state.avatarEditor.zoom;
+    const drawWidth = image.naturalWidth * scale;
+    const drawHeight = image.naturalHeight * scale;
+    const x = (PHOTO_AVATAR_SIZE - drawWidth) / 2 + state.avatarEditor.offsetX;
+    const y = (PHOTO_AVATAR_SIZE - drawHeight) / 2 + state.avatarEditor.offsetY;
+
+    ctx.drawImage(image, x, y, drawWidth, drawHeight);
+    state.draft.selectedPhotoDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+}
+
+function loadPhotoDataUrl(dataUrl) {
+    const image = new Image();
+    image.onload = () => {
+        state.avatarEditor.sourceImage = image;
+        state.avatarEditor.sourceDataUrl = dataUrl;
+        state.avatarEditor.zoom = 1;
+        state.avatarEditor.offsetX = 0;
+        state.avatarEditor.offsetY = 0;
+        el.photoZoomInput.value = "1";
+        el.photoZoomInput.disabled = false;
+        renderPhotoCropCanvas();
+    };
+    image.src = dataUrl;
+}
+
+function handlePhotoInput(file) {
+    if (!file || !file.type.startsWith("image/")) {
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+        loadPhotoDataUrl(String(reader.result || ""));
+        setSelectedAvatarType("photo");
+    };
+    reader.readAsDataURL(file);
+}
+
+function getCropPointer(event) {
+    const rect = el.photoCropCanvas.getBoundingClientRect();
+    return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+    };
+}
+
+function startPhotoDrag(event) {
+    if (!state.avatarEditor.sourceImage) {
+        return;
+    }
+    event.preventDefault();
+    const point = getCropPointer(event);
+    state.avatarEditor.dragging = true;
+    state.avatarEditor.lastX = point.x;
+    state.avatarEditor.lastY = point.y;
+    el.photoCropCanvas.classList.add("is-dragging");
+    el.photoCropCanvas.setPointerCapture(event.pointerId);
+}
+
+function dragPhoto(event) {
+    if (!state.avatarEditor.dragging) {
+        return;
+    }
+    event.preventDefault();
+    const point = getCropPointer(event);
+    state.avatarEditor.offsetX += point.x - state.avatarEditor.lastX;
+    state.avatarEditor.offsetY += point.y - state.avatarEditor.lastY;
+    state.avatarEditor.lastX = point.x;
+    state.avatarEditor.lastY = point.y;
+    renderPhotoCropCanvas();
+}
+
+function endPhotoDrag(event) {
+    if (!state.avatarEditor.dragging) {
+        return;
+    }
+    state.avatarEditor.dragging = false;
+    el.photoCropCanvas.classList.remove("is-dragging");
+    if (event.pointerId !== undefined && el.photoCropCanvas.hasPointerCapture(event.pointerId)) {
+        el.photoCropCanvas.releasePointerCapture(event.pointerId);
+    }
 }
 
 function renderPlayerEmojiPicker() {
@@ -929,7 +1159,8 @@ function renderNewGame() {
             const row = document.createElement("div");
             row.className = "player-row";
             const label = document.createElement("div");
-            label.innerHTML = `${formatPlayerLabel(player)}${player.archived ? ' <span class="muted">(archived)</span>' : ""}`;
+            label.className = "player-row-label";
+            label.innerHTML = `${formatPlayerLabel(player)}${player.archived ? '<span class="archived-label">(archived)</span>' : ""}`;
             const actions = document.createElement("div");
             actions.className = "player-row-actions";
 
@@ -1046,7 +1277,11 @@ function renderHistory() {
                 if (game.winners.includes(entry.playerId)) {
                     row.classList.add("is-winner");
                 }
-                row.innerHTML = `<strong>${formatPlayerLabel({ emoji: game.playerEmojis?.[entry.playerId] || getPlayerEmoji(entry.playerId), name: game.playerNames?.[entry.playerId] || getPlayerName(entry.playerId) })}</strong><p class="muted">${entry.score} points</p>`;
+                const currentPlayer = getPlayerById(entry.playerId);
+                const labelPlayer = currentPlayer
+                    ? { ...currentPlayer, name: game.playerNames?.[entry.playerId] || currentPlayer.name }
+                    : { emoji: game.playerEmojis?.[entry.playerId] || DEFAULT_PLAYER_EMOJI, name: game.playerNames?.[entry.playerId] || getPlayerName(entry.playerId) };
+                row.innerHTML = `<strong>${formatPlayerLabel(labelPlayer)}</strong><p class="muted">${entry.score} points</p>`;
                 scoresWrap.appendChild(row);
             });
 
@@ -1178,6 +1413,20 @@ function handleStartGame(event) {
 function bindEvents() {
     el.openPlayerDialogBtn.addEventListener("click", () => openPlayerDialog());
     el.newGameForm.addEventListener("submit", handleStartGame);
+    el.avatarEmojiModeBtn.addEventListener("click", () => setSelectedAvatarType("emoji"));
+    el.avatarPhotoModeBtn.addEventListener("click", () => setSelectedAvatarType("photo"));
+    el.playerPhotoInput.addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        handlePhotoInput(file);
+    });
+    el.photoZoomInput.addEventListener("input", () => {
+        state.avatarEditor.zoom = Number.parseFloat(el.photoZoomInput.value) || 1;
+        renderPhotoCropCanvas();
+    });
+    el.photoCropCanvas.addEventListener("pointerdown", startPhotoDrag);
+    el.photoCropCanvas.addEventListener("pointermove", dragPhoto);
+    el.photoCropCanvas.addEventListener("pointerup", endPhotoDrag);
+    el.photoCropCanvas.addEventListener("pointercancel", endPhotoDrag);
     el.tabButtons.forEach((button) => {
         button.addEventListener("click", () => setActiveTab(button.dataset.tab));
     });
